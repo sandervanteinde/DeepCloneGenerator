@@ -1,5 +1,7 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -14,6 +16,7 @@ public class CloneGeneratorClassContext : IDisposable
     private readonly INamedTypeSymbol _classSymbol;
     private readonly StringWriter _stringWriter;
     private readonly IndentedTextWriter _writer;
+    private readonly IEnumerator<string> _uniqueVariableNames = UniqueVariableNames().GetEnumerator();
 
     public CloneGeneratorClassContext(CloneGeneratorContext context, INamedTypeSymbol classSymbol)
     {
@@ -79,15 +82,61 @@ public class CloneGeneratorClassContext : IDisposable
 
     private void WriteAssignment(ISymbol symbol, ITypeSymbol returnType)
     {
+        var variableName = $"{CtorVariableName}.{symbol.Name}";
+        
+        var variableNameToAssign = WriteCloneLogic(variableName, returnType);
+        _writer.Write("this.");
+        _writer.Write(symbol.Name);
+        _writer.Write(" = ");
+        _writer.Write(variableNameToAssign);
+        _writer.WriteLine(';');
+    }
+
+    private string NextUniqueVariableName()
+    {
+        if (!_uniqueVariableNames.MoveNext())
+        {
+            throw new InvalidOperationException("To many unique variable names requested");
+        }
+
+        return _uniqueVariableNames.Current!;
+    }
+
+    private string WriteCloneLogic(string variableName, ITypeSymbol returnType)
+    {
+        if (returnType is IArrayTypeSymbol arraySymbol)
+        {
+            var variableNameToAssign = NextUniqueVariableName();
+            var elementTypeAsName = arraySymbol.ElementType.ToDisplayString();
+            _writer.WriteLine($"var {variableNameToAssign} = {variableName} is null ? null : new {elementTypeAsName}[{variableName}.Length];");
+            _writer.WriteLine($"for(var i = 0; i < {variableNameToAssign}?.Length; i++)");
+            _writer.WriteLine('{');
+            _writer.Indent++;
+            var elementVariableName = WriteCloneLogic($"{variableName}[i]", arraySymbol.ElementType);
+            _writer.WriteLine($"{variableNameToAssign}[i] = {elementVariableName};");
+            _writer.Indent--;
+            _writer.WriteLine("}");
+            return variableNameToAssign;
+        }
         var returnTypeName = returnType.ToDisplayString();
         var isCloneMethodAvailable = _context.ClassesInAssemblyGeneratingClone.Contains(returnTypeName)
             || returnType.AllInterfaces.Any(c => c.Name == InterfaceName);
+        return $"{variableName}{(isCloneMethodAvailable ? $"?.{CloneMethodName}()" : string.Empty)}";
+    }
 
-        _writer.WriteLine($"this.{symbol.Name} = {CtorVariableName}.{symbol.Name}{(isCloneMethodAvailable ? $".{CloneMethodName}()" : string.Empty)};");
+    private static IEnumerable<string> UniqueVariableNames()
+    {
+        var i = 1;
+
+        while (i < 10_000)
+        {
+            yield return $"__codeGeneratedTemporaryVariable{i++}";
+        }
     }
 
     public void Dispose()
     {
         _writer.Dispose();
+        _uniqueVariableNames.Dispose();
     }
 }

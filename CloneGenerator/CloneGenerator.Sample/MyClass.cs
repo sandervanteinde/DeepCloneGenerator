@@ -8,6 +8,7 @@ public partial class MyClass
     public string AutoPropertyAccessor => _nonAutoProperty;
     public MyInnerClass Inner { get; }
     public int[] IntegerArray { get; }
+    public MyInnerClass[] InnerArrayOfInnerClasses { get; }
 
     public MyClass()
     {
@@ -15,6 +16,11 @@ public partial class MyClass
         _nonAutoProperty = "Non auto property";
         Inner = new();
         IntegerArray = new[] { 1, 2, 3, 4 };
+        InnerArrayOfInnerClasses = new[]
+        {
+            new MyInnerClass("Sander"),
+            new MyInnerClass("van 't Einde")
+        };
     }
 }
 
@@ -23,7 +29,7 @@ public partial class MyInnerClass
 {
     public string Value { get; }
 
-    public MyInnerClass()
+    public MyInnerClass(string text = "Hello, world!")
     {
         Value = "Hello, world!";
     }
