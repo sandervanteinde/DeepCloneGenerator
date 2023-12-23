@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\CloneGenerator\CloneGenerator.Sample\CloneGenerator.Sample.csproj"/>
+        <ProjectReference Include="..\CloneGenerator\CloneGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
 </Project>

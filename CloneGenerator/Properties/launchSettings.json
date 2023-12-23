@@ -4,6 +4,10 @@
     "DebugRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "../CloneGenerator.Sample/CloneGenerator.Sample.csproj"
+    },
+    "DebugTestsRoslynSourceGenerator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "../CloneGenerator.Tests/CloneGenerator.Tests.csproj"
     }
   }
 }

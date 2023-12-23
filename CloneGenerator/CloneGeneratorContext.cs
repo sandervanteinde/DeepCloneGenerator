@@ -8,7 +8,6 @@ namespace CloneGenerator;
 public class CloneGeneratorContext
 {
     private readonly IReadOnlyCollection<INamedTypeSymbol> _classSymbols;
-    public IReadOnlyCollection<string> ClassesInAssemblyGeneratingClone { get; }
 
     public CloneGeneratorContext(IReadOnlyCollection<INamedTypeSymbol> classSymbols)
     {
@@ -19,12 +18,14 @@ public class CloneGeneratorContext
         ClassesInAssemblyGeneratingClone = classesInAssemblyGeneratingClone;
     }
 
-    public void Do(SourceProductionContext ctx)
+    public IReadOnlyCollection<string> ClassesInAssemblyGeneratingClone { get; }
+
+    public void Do(ref SourceProductionContext ctx)
     {
         foreach (var classSymbol in _classSymbols)
         {
             using var classContext = new CloneGeneratorClassContext(this, classSymbol);
-            classContext.Do(ctx);
+            classContext.Do(ref ctx);
         }
     }
 }

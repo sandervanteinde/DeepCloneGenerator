@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator", "CloneGenerator\CloneGenerator\CloneGenerator.csproj", "{18D5C757-1BBB-4144-9360-2EE82345B61E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator.Sample", "CloneGenerator\CloneGenerator.Sample\CloneGenerator.Sample.csproj", "{8BC76C68-73CD-4D4D-B65C-A60D5C120216}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator", "CloneGenerator\CloneGenerator.csproj", "{18D5C757-1BBB-4144-9360-2EE82345B61E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator.Tests", "CloneGenerator.Tests\CloneGenerator.Tests.csproj", "{22E14538-E572-4291-ADB6-C7C6634EE99C}"
 EndProject
@@ -16,10 +14,6 @@ Global
 		{18D5C757-1BBB-4144-9360-2EE82345B61E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18D5C757-1BBB-4144-9360-2EE82345B61E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18D5C757-1BBB-4144-9360-2EE82345B61E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8BC76C68-73CD-4D4D-B65C-A60D5C120216}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8BC76C68-73CD-4D4D-B65C-A60D5C120216}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8BC76C68-73CD-4D4D-B65C-A60D5C120216}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8BC76C68-73CD-4D4D-B65C-A60D5C120216}.Release|Any CPU.Build.0 = Release|Any CPU
 		{22E14538-E572-4291-ADB6-C7C6634EE99C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{22E14538-E572-4291-ADB6-C7C6634EE99C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22E14538-E572-4291-ADB6-C7C6634EE99C}.Release|Any CPU.ActiveCfg = Release|Any CPU
