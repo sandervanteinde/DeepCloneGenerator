@@ -9,15 +9,17 @@ public class CloneGeneratorContext
 {
     private readonly IReadOnlyCollection<INamedTypeSymbol> _classSymbols;
 
-    public CloneGeneratorContext(IReadOnlyCollection<INamedTypeSymbol> classSymbols)
+    public CloneGeneratorContext(IReadOnlyCollection<INamedTypeSymbol> classSymbols, Compilation compilation)
     {
         _classSymbols = classSymbols;
+        Compilation = compilation;
         var classesInAssemblyGeneratingClone = classSymbols
             .Select(c => $"{c.ContainingNamespace.ToDisplayString()}.{c.Name}")
             .ToImmutableHashSet();
         ClassesInAssemblyGeneratingClone = classesInAssemblyGeneratingClone;
     }
 
+    public Compilation Compilation { get; }
     public IReadOnlyCollection<string> ClassesInAssemblyGeneratingClone { get; }
 
     public void Do(ref SourceProductionContext ctx)

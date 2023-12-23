@@ -90,7 +90,7 @@ public class CloneGenerator : IIncrementalGenerator
             .OfType<INamedTypeSymbol>()
             .ToList();
 
-        var context = new CloneGeneratorContext(classSymbols);
+        var context = new CloneGeneratorContext(classSymbols, compilation);
         context.Do(ref ctx);
     }
 

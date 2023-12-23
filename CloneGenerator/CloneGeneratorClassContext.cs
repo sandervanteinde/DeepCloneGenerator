@@ -202,6 +202,11 @@ public class CloneGeneratorClassContext : IDisposable
             return WriteArrayClone(variableName, arraySymbol.ElementType);
         }
 
+        if (IsCollectionWithParameterlessConstructor(returnType, out var elementType))
+        {
+            return WriteCollectionClone(variableName, (INamedTypeSymbol)returnType, elementType!);
+        }
+
         if (IsEnumerableType(returnType, out var enumerableType))
         {
             return WriteEnumerableClone($"(({enumerableType!.ToDisplayString()}){variableName})", enumerableType);
@@ -211,6 +216,22 @@ public class CloneGeneratorClassContext : IDisposable
         var isCloneMethodAvailable = _context.ClassesInAssemblyGeneratingClone.Contains(returnTypeName)
             || returnType.AllInterfaces.Any(c => c.Name == InterfaceName);
         return $"{variableName}{(isCloneMethodAvailable ? $"?.{CloneMethodName}()" : string.Empty)}";
+    }
+
+    private string WriteCollectionClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol elementType)
+    {
+        var variableNameToAssign = NextUniqueVariableName();
+        _writer.WriteLine($"var {variableNameToAssign} = new {collectionType.ToDisplayString()}();");
+        var iteratorVariableName = NextUniqueVariableName();
+        _writer.WriteLine($"foreach(var {iteratorVariableName} in {variableName})");
+        _writer.WriteLine(value: '{');
+        _writer.Indent++;
+        var elementVariableName = WriteCloneLogic(iteratorVariableName, elementType);
+        _writer.WriteLine($"{variableNameToAssign}.Add({elementVariableName});");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
+
+        return variableNameToAssign;
     }
 
     private string WriteArrayClone(string variableName, ITypeSymbol elementType)
@@ -254,6 +275,35 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         return listVariable;
+    }
+
+    private static bool IsCollectionWithParameterlessConstructor(ITypeSymbol symbol, out ITypeSymbol? elementType)
+    {
+        if (symbol is not INamedTypeSymbol namedTypeSymbol)
+        {
+            elementType = null;
+            return false;
+        }
+
+        if (!namedTypeSymbol.Constructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public))
+        {
+            elementType = null;
+            return false;
+        }
+
+        var collectionInterface = namedTypeSymbol.AllInterfaces.FirstOrDefault(
+            c => c.ToDisplayString()
+                .StartsWith("System.Collections.Generic.ICollection")
+        );
+
+        if (collectionInterface is null)
+        {
+            elementType = null;
+            return false;
+        }
+
+        elementType = collectionInterface.TypeArguments[index: 0];
+        return true;
     }
 
     private static bool IsEnumerableType(ITypeSymbol symbol, out INamedTypeSymbol? enumerableType)
