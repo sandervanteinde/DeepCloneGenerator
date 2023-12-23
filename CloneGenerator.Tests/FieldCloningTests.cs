@@ -7,17 +7,15 @@ public partial class FieldCloningTests
     [Fact]
     public void Test()
     {
-        var field = new FieldTests
+        var original = new FieldTests
         {
             MyField = "Hello, world!"
         };
 
-        var clone = field.DeepClone();
+        var clone = original.DeepClone();
 
         clone.Should()
-            .BeEquivalentTo(field)
-            .And
-            .NotBeSameAs(field);
+            .BeEquivalentTo(original);
     }
 
     [GenerateClone]

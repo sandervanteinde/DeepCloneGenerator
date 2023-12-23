@@ -21,12 +21,12 @@ public class CloneGenerator : IIncrementalGenerator
           namespace {{Namespace}}
           {
               [System.AttributeUsage(System.AttributeTargets.Class)]
-              public class {{AttributeName}} : System.Attribute
+              internal class {{AttributeName}} : System.Attribute
               {
               }
           
               [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field)]
-              public class {{IgnoreCloneAttribute}} : System.Attribute
+              internal class {{IgnoreCloneAttribute}} : System.Attribute
               {
               }
           }
@@ -43,7 +43,7 @@ public class CloneGenerator : IIncrementalGenerator
 
           namespace {{Namespace}}
           {
-              public interface {{InterfaceName}}<TSelf>
+              internal interface {{InterfaceName}}<TSelf>
               {
                   TSelf {{CloneMethodName}}();
               }

@@ -13,6 +13,7 @@ public class CloneGeneratorClassContext : IDisposable
 {
     private readonly INamedTypeSymbol _classSymbol;
     private readonly CloneGeneratorContext _context;
+    private readonly HashSet<string> _mandatoryNamespaces = new();
     private readonly StringWriter _stringWriter;
 
     private readonly IEnumerator<string> _uniqueVariableNames = UniqueVariableNames()
@@ -42,28 +43,28 @@ public class CloneGeneratorClassContext : IDisposable
 
         foreach (var item in hierarchy)
         {
-            if (item is INamespaceSymbol)
+            switch (item)
             {
-                _writer.WriteLine($"namespace {item.ToDisplayString()}");
-                _writer.WriteLine(value: '{');
-                _writer.Indent++;
-                continue;
-            }
-
-            if (item is ITypeSymbol { TypeKind: TypeKind.Class } typeSymbol)
-            {
-                if (!TryInterpretType(typeSymbol, out var itemType))
+                case INamespaceSymbol:
+                    _writer.WriteLine($"namespace {item.ToDisplayString()}");
+                    _writer.WriteLine(value: '{');
+                    _writer.Indent++;
+                    continue;
+                case ITypeSymbol { TypeKind: TypeKind.Class } typeSymbol:
                 {
-                    return;
+                    if (!TryInterpretType(typeSymbol, out var itemType))
+                    {
+                        return;
+                    }
+
+                    _writer.WriteLine($"partial {itemType} {item.Name}");
+                    _writer.WriteLine(value: '{');
+                    _writer.Indent++;
+                    continue;
                 }
-
-                _writer.WriteLine($"partial {itemType} {item.Name}");
-                _writer.WriteLine(value: '{');
-                _writer.Indent++;
-                continue;
+                default:
+                    return;
             }
-
-            return;
         }
 
         if (!TryInterpretType(_classSymbol, out var type))
@@ -78,14 +79,21 @@ public class CloneGeneratorClassContext : IDisposable
         if (!HasCtorDefined(_classSymbol))
         {
             _writer.WriteLine($"public {className}() {{ }}");
+            _writer.WriteLine();
+        }
+
+        if (HasRequiredMembers(_classSymbol))
+        {
+            _writer.WriteLine("[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]");
         }
 
         _writer.WriteLine($"private {className}({className} {CtorVariableName})");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
+        var nonCompilerGeneratedMembers = _classSymbol.GetMembers()
+            .Where(symbol => symbol.CanBeReferencedByName);
 
-        foreach (var member in _classSymbol.GetMembers()
-                     .Where(symbol => symbol.CanBeReferencedByName))
+        foreach (var member in nonCompilerGeneratedMembers)
         {
             var syntaxNode = member.DeclaringSyntaxReferences
                 .FirstOrDefault()
@@ -136,7 +144,13 @@ public class CloneGeneratorClassContext : IDisposable
 
         ctx.AddSource(
             $"{fileName}.g.cs",
-            _stringWriter.ToString()
+            _mandatoryNamespaces.Count == 0
+                ? _stringWriter.ToString()
+                : $"""
+                   {string.Join(_stringWriter.NewLine, _mandatoryNamespaces.OrderBy(c => c).Select(c => $"using {c};"))}
+
+                   {_stringWriter}
+                   """
         );
     }
 
@@ -185,7 +199,12 @@ public class CloneGeneratorClassContext : IDisposable
     {
         if (returnType is IArrayTypeSymbol arraySymbol)
         {
-            return WriteArrayClone(variableName, arraySymbol);
+            return WriteArrayClone(variableName, arraySymbol.ElementType);
+        }
+
+        if (IsEnumerableType(returnType, out var enumerableType))
+        {
+            return WriteEnumerableClone($"(({enumerableType!.ToDisplayString()}){variableName})", enumerableType);
         }
 
         var returnTypeName = returnType.ToDisplayString();
@@ -194,19 +213,71 @@ public class CloneGeneratorClassContext : IDisposable
         return $"{variableName}{(isCloneMethodAvailable ? $"?.{CloneMethodName}()" : string.Empty)}";
     }
 
-    private string WriteArrayClone(string variableName, IArrayTypeSymbol arraySymbol)
+    private string WriteArrayClone(string variableName, ITypeSymbol elementType)
     {
         var variableNameToAssign = NextUniqueVariableName();
-        var elementTypeAsName = arraySymbol.ElementType.ToDisplayString();
+        var elementTypeAsName = elementType.ToDisplayString();
         _writer.WriteLine($"var {variableNameToAssign} = ReferenceEquals({variableName}, null) ? null : new {elementTypeAsName}[{variableName}.Length];");
         _writer.WriteLine($"for(var i = 0; i < {variableNameToAssign}?.Length; i++)");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
-        var elementVariableName = WriteCloneLogic($"{variableName}[i]", arraySymbol.ElementType);
+        var elementVariableName = WriteCloneLogic($"{variableName}[i]", elementType);
         _writer.WriteLine($"{variableNameToAssign}[i] = {elementVariableName};");
         _writer.Indent--;
         _writer.WriteLine("}");
         return variableNameToAssign;
+    }
+
+    private void AddNamespace(string @namespace)
+    {
+        _mandatoryNamespaces.Add(@namespace);
+    }
+
+    private string WriteEnumerableClone(string variableName, INamedTypeSymbol enumerableType)
+    {
+        AddNamespace("System.Linq");
+
+        var assignEnumerableVariable = NextUniqueVariableName();
+        _writer.WriteLine($"var {assignEnumerableVariable} = {variableName};");
+        var countVariable = NextUniqueVariableName();
+        _writer.WriteLine($"_ = {assignEnumerableVariable}.TryGetNonEnumeratedCount(out var {countVariable});");
+        var listVariable = NextUniqueVariableName();
+        var elementType = enumerableType.TypeArguments.Single();
+        var elementTypeName = elementType.ToDisplayString();
+        _writer.WriteLine($"var {listVariable} = new System.Collections.Generic.List<{elementTypeName}>({countVariable});");
+        var iteratorVariable = NextUniqueVariableName();
+        _writer.WriteLine($"foreach(var {iteratorVariable} in {assignEnumerableVariable})");
+        _writer.WriteLine(value: '{');
+        _writer.Indent++;
+        var resultVariable = WriteCloneLogic(iteratorVariable, elementType);
+        _writer.WriteLine($"{listVariable}.Add({resultVariable});");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
+        return listVariable;
+    }
+
+    private static bool IsEnumerableType(ITypeSymbol symbol, out INamedTypeSymbol? enumerableType)
+    {
+        if (symbol.TypeKind != TypeKind.Interface)
+        {
+            enumerableType = null;
+            return false;
+        }
+
+        if (symbol.ToDisplayString()
+            .StartsWith("System.Collections.Generic.IEnumerable"))
+        {
+            enumerableType = (INamedTypeSymbol)symbol;
+            return true;
+        }
+
+        var iface = symbol.AllInterfaces.FirstOrDefault(
+            iface => iface.ToDisplayString()
+                .StartsWith("System.Collections.Generic.IEnumerable")
+        );
+
+        enumerableType = iface;
+        return enumerableType is not null;
     }
 
     private static IEnumerable<string> UniqueVariableNames()
@@ -222,6 +293,12 @@ public class CloneGeneratorClassContext : IDisposable
     private static bool HasCtorDefined(INamedTypeSymbol symbol)
     {
         return symbol.Constructors.Any(c => c.DeclaringSyntaxReferences.Length > 0);
+    }
+
+    private static bool HasRequiredMembers(INamespaceOrTypeSymbol symbol)
+    {
+        return symbol.GetMembers()
+            .Any(member => member is IFieldSymbol { IsRequired: true } or IPropertySymbol { IsRequired: true });
     }
 
     private bool TryInterpretType(ITypeSymbol symbol, out string interpretedType)

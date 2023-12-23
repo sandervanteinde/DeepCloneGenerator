@@ -1,13 +1,18 @@
-﻿namespace CloneGenerator.Tests;
+﻿using FluentAssertions;
+
+namespace CloneGenerator.Tests;
 
 public partial class PropertyCloningTests
 {
     [Fact]
     public void Test()
     {
-        var sut = new PropertyTest { Input = "Hello, world!" };
+        var original = new PropertyTest { Input = "Hello, world!" };
 
-        var clone = sut.DeepClone();
+        var clone = original.DeepClone();
+
+        clone.Should()
+            .BeExactClone(original);
     }
 
     [GenerateClone]
