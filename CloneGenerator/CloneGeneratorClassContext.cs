@@ -202,6 +202,11 @@ public class CloneGeneratorClassContext : IDisposable
             return WriteArrayClone(variableName, arraySymbol.ElementType);
         }
 
+        if (IsDictionaryWithParameterlessConstructor(returnType, out var keyType, out var valueType))
+        {
+            return WriteDictionaryClone(variableName, (INamedTypeSymbol)returnType, keyType!, valueType!);
+        }
+
         if (IsCollectionWithParameterlessConstructor(returnType, out var elementType))
         {
             return WriteCollectionClone(variableName, (INamedTypeSymbol)returnType, elementType!);
@@ -216,6 +221,23 @@ public class CloneGeneratorClassContext : IDisposable
         var isCloneMethodAvailable = _context.ClassesInAssemblyGeneratingClone.Contains(returnTypeName)
             || returnType.AllInterfaces.Any(c => c.Name == InterfaceName);
         return $"{variableName}{(isCloneMethodAvailable ? $"?.{CloneMethodName}()" : string.Empty)}";
+    }
+
+    private string WriteDictionaryClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol keyType, ITypeSymbol valueType)
+    {
+        var variableNameToAssign = NextUniqueVariableName();
+        _writer.WriteLine($"var {variableNameToAssign} = new {collectionType.ToDisplayString()}();");
+        var iteratorVariableName = NextUniqueVariableName();
+        _writer.WriteLine($"foreach(var {iteratorVariableName} in {variableName})");
+        _writer.WriteLine(value: '{');
+        _writer.Indent++;
+        var keyVariableName = WriteCloneLogic($"{iteratorVariableName}.Key", keyType);
+        var valueVariableName = WriteCloneLogic($"{iteratorVariableName}.Value", valueType);
+        _writer.WriteLine($"{variableNameToAssign}[{keyVariableName}] = {valueVariableName};");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
+
+        return variableNameToAssign;
     }
 
     private string WriteCollectionClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol elementType)
@@ -275,6 +297,37 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         return listVariable;
+    }
+
+    private static bool IsDictionaryWithParameterlessConstructor(ITypeSymbol symbol, out ITypeSymbol? keyType, out ITypeSymbol? elementType)
+    {
+        keyType = null;
+        elementType = null;
+
+        if (symbol is not INamedTypeSymbol namedTypeSymbol)
+        {
+            return false;
+        }
+
+        if (!namedTypeSymbol.Constructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public))
+        {
+            return false;
+        }
+
+        var collectionInterface = namedTypeSymbol.AllInterfaces.FirstOrDefault(
+            c => c.ToDisplayString()
+                .StartsWith("System.Collections.Generic.IDictionary")
+        );
+
+        if (collectionInterface is null)
+        {
+            elementType = null;
+            return false;
+        }
+
+        keyType = collectionInterface.TypeArguments[index: 0];
+        elementType = collectionInterface.TypeArguments[index: 1];
+        return true;
     }
 
     private static bool IsCollectionWithParameterlessConstructor(ITypeSymbol symbol, out ITypeSymbol? elementType)
