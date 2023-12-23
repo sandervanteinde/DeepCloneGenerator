@@ -95,6 +95,12 @@ public class CloneGeneratorClassContext : IDisposable
 
         foreach (var member in nonCompilerGeneratedMembers)
         {
+            if (member.GetAttributes()
+                .Any(c => c.AttributeClass?.Name == IgnoreCloneAttribute))
+            {
+                continue;
+            }
+
             var syntaxNode = member.DeclaringSyntaxReferences
                 .FirstOrDefault()
                 ?.GetSyntax();
