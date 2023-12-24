@@ -1,0 +1,5 @@
+branches:
+  main:
+    is-mainline: true
+    increment: Patch
+mode: Mainline
