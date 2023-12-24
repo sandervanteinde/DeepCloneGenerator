@@ -5,9 +5,11 @@ name: .NET Continuous integration test
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -42,3 +44,4 @@ jobs:
         run: dotnet nuget push ./DeepCloneGenerator/bin/Release/DeepCloneGenerator.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg -k ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        if: github.event_name != 'pull_request'
