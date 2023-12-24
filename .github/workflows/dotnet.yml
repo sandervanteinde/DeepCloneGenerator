@@ -16,8 +16,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: GitTools
-      uses: GitTools/actions@v0.10.2
+      with:
+        fetch-depth: 0
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0
+      with:
+        versionSpec: '5.x'
+
+    - name: Determine Version
+      uses: gittools/actions/gitversion/execute@v0
             
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
