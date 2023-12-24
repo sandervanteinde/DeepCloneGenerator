@@ -3,11 +3,11 @@
   "profiles": {
     "DebugRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../CloneGenerator.Sample/CloneGenerator.Sample.csproj"
+      "targetProject": "../DeepCloneGenerator.Sample/DeepCloneGenerator.Sample.csproj"
     },
     "DebugTestsRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../CloneGenerator.Tests/CloneGenerator.Tests.csproj"
+      "targetProject": "../DeepCloneGenerator.Tests/DeepCloneGenerator.Tests.csproj"
     }
   }
 }

@@ -1,4 +1,6 @@
-﻿namespace CloneGenerator.Tests;
+﻿using DeepCloneGenerator;
+
+namespace DeepCloneGenerator.Tests;
 
 public partial class DictionaryCloningTests
 {

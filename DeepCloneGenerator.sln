@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator", "CloneGenerator\CloneGenerator.csproj", "{18D5C757-1BBB-4144-9360-2EE82345B61E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepCloneGenerator", "DeepCloneGenerator\DeepCloneGenerator.csproj", "{18D5C757-1BBB-4144-9360-2EE82345B61E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator.Tests", "CloneGenerator.Tests\CloneGenerator.Tests.csproj", "{22E14538-E572-4291-ADB6-C7C6634EE99C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepCloneGenerator.Tests", "DeepCloneGenerator.Tests\DeepCloneGenerator.Tests.csproj", "{22E14538-E572-4291-ADB6-C7C6634EE99C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneGenerator.DummyLib", "CloneGenerator.DummyLib\CloneGenerator.DummyLib.csproj", "{C9B80D45-9046-4DEE-8614-DA41BAAB1B26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepCloneGenerator.DummyLib", "DeepCloneGenerator.DummyLib\DeepCloneGenerator.DummyLib.csproj", "{C9B80D45-9046-4DEE-8614-DA41BAAB1B26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

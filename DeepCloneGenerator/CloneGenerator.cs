@@ -5,12 +5,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace CloneGenerator;
+namespace DeepCloneGenerator;
 
 [Generator]
 public class CloneGenerator : IIncrementalGenerator
 {
-    internal const string Namespace = "CloneGenerator";
+    internal const string Namespace = "DeepCloneGenerator";
     internal const string AttributeName = "GenerateCloneAttribute";
     internal const string IgnoreCloneAttribute = "CloneIgnoreAttribute";
 

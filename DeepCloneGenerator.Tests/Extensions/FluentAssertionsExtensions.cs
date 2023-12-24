@@ -1,7 +1,7 @@
 ﻿using FluentAssertions.Equivalency;
 using FluentAssertions.Primitives;
 
-namespace CloneGenerator.Tests.Extensions;
+namespace DeepCloneGenerator.Tests.Extensions;
 
 public static class FluentAssertionsExtensions
 {

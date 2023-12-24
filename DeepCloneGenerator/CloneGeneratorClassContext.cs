@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static CloneGenerator.CloneGenerator;
+using static DeepCloneGenerator.CloneGenerator;
 
-namespace CloneGenerator;
+namespace DeepCloneGenerator;
 
 public class CloneGeneratorClassContext : IDisposable
 {
