@@ -37,3 +37,8 @@ jobs:
         run: dotnet build --no-restore  -c Release /p:Version=${{ steps.gitversion.outputs.nuGetVersion}}
       - name: Test
         run: dotnet test --no-build --verbosity normal  -c Release
+
+      - name: Publish Nuget to GitHub registry
+        run: dotnet nuget push ./DeepCloneGenerator/bin/Release/*.nupkg -k ${NUGET_TOKEN} --skip-duplicate --no-symbols 
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
