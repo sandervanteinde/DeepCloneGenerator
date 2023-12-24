@@ -38,6 +38,11 @@ The following types are supported for deep cloning:
 - When collections are made with certain characteristics, those characteristics are currently lost (e.g.: an
   EqualityComparer for a Dictionary)
 - Classes with primary constructors are not yet supported
+- Classes get a `ISourceGeneratedCloneable<TSelf>` interface when they are targeted by the source generator. This
+  interface can be referenced from within the assembly, but outside of the assembly you cannot reference the interface (
+  each assembly has its own `ISourceGeneratedCloneable<TSelf>` interface definition thus they do not match.)
 
 ## Future plans
-- Add analyzers which will inform of known limitations as warnings when DeepClone functionality is not working as intended
+
+- Add analyzers which will inform of known limitations as warnings when DeepClone functionality is not working as
+  intended
