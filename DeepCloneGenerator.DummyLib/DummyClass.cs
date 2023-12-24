@@ -1,4 +1,6 @@
-﻿namespace CloneGenerator.DummyLib;
+﻿using DeepCloneGenerator;
+
+namespace DeepCloneGenerator.DummyLib;
 
 [GenerateClone]
 public partial class DummyClass

@@ -1,6 +1,6 @@
-﻿using FluentAssertions;
+﻿using DeepCloneGenerator;
 
-namespace CloneGenerator.Tests;
+namespace DeepCloneGenerator.Tests;
 
 public partial class FieldCloningTests
 {

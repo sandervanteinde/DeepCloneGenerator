@@ -1,6 +1,7 @@
-﻿using CloneGenerator.DummyLib;
+﻿using DeepCloneGenerator.DummyLib;
+using DeepCloneGenerator;
 
-namespace CloneGenerator.Tests;
+namespace DeepCloneGenerator.Tests;
 
 public partial class CloneClassFromOtherLibTests
 {
