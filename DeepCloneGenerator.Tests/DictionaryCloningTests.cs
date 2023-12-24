@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class DictionaryCloningTests
 {
@@ -22,7 +20,7 @@ public partial class DictionaryCloningTests
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     private partial class ClassWithDictionary
     {
         public required Dictionary<string, string> Values { get; init; }

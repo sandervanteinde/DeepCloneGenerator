@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class CloneIgnoreTests
 {
@@ -21,7 +19,7 @@ public partial class CloneIgnoreTests
             .Be(original.PropertyToClone);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     public partial class ClassWithIgnore
     {
         [CloneIgnore] public required string PropertyToIgnore { get; init; }

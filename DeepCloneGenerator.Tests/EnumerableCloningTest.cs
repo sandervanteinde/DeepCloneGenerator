@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class EnumerableCloningTest
 {
@@ -46,13 +44,13 @@ public partial class EnumerableCloningTest
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     private partial class ClassWithEnumerable
     {
         public required IEnumerable<string> Strings { get; init; }
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     private partial class ClassWithEnumerableInEnumerable
     {
         public required IEnumerable<IEnumerable<string>> Strings { get; init; }

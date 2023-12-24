@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class PropertyCloningTests
 {
@@ -15,7 +13,7 @@ public partial class PropertyCloningTests
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     public partial class PropertyTest
     {
         public string Input { get; init; }

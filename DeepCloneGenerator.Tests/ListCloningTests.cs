@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class CloningTests
 {
@@ -18,7 +16,7 @@ public partial class CloningTests
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     public partial class ClassWithList
     {
         public required List<int> Numbers { get; init; }

@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class ArrayCloningTests
 {
@@ -18,7 +16,7 @@ public partial class ArrayCloningTests
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     private partial class ClassWithArray
     {
         public int[] Integers { get; init; }

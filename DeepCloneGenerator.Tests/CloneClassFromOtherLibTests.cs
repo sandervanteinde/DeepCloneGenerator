@@ -1,5 +1,4 @@
 ﻿using DeepCloneGenerator.DummyLib;
-using DeepCloneGenerator;
 
 namespace DeepCloneGenerator.Tests;
 
@@ -22,7 +21,7 @@ public partial class CloneClassFromOtherLibTests
             .BeExactClone(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     public partial class ClassContainingOtherLibClass
     {
         public required DummyClass Dummy { get; init; }

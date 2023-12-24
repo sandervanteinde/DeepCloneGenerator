@@ -11,7 +11,7 @@ namespace DeepCloneGenerator;
 public class CloneGenerator : IIncrementalGenerator
 {
     internal const string Namespace = "DeepCloneGenerator";
-    internal const string AttributeName = "GenerateCloneAttribute";
+    internal const string AttributeName = "GenerateDeepCloneAttribute";
     internal const string IgnoreCloneAttribute = "CloneIgnoreAttribute";
 
     private const string AttributesSource =

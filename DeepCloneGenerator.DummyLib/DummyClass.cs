@@ -1,8 +1,6 @@
-﻿using DeepCloneGenerator;
+﻿namespace DeepCloneGenerator.DummyLib;
 
-namespace DeepCloneGenerator.DummyLib;
-
-[GenerateClone]
+[GenerateDeepClone]
 public partial class DummyClass
 {
     public required string Value { get; init; }

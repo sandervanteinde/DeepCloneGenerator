@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class RequiredFieldCloningTests
 {
@@ -20,7 +18,7 @@ public partial class RequiredFieldCloningTests
             .BeEquivalentTo(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     public partial class ClassWithRequiredField
     {
         public required string MyRequiredField;

@@ -1,6 +1,4 @@
-﻿using DeepCloneGenerator;
-
-namespace DeepCloneGenerator.Tests;
+﻿namespace DeepCloneGenerator.Tests;
 
 public partial class FieldCloningTests
 {
@@ -18,7 +16,7 @@ public partial class FieldCloningTests
             .BeEquivalentTo(original);
     }
 
-    [GenerateClone]
+    [GenerateDeepClone]
     private partial class FieldTests
     {
         public string MyField;
