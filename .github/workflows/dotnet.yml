@@ -34,6 +34,6 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --no-restore  -c Release /p:${{ steps.gitversion.outputs.nuGetVersion}}
+        run: dotnet build --no-restore  -c Release /p:Version=${{ steps.gitversion.outputs.nuGetVersion}}
       - name: Test
         run: dotnet test --no-build --verbosity normal  -c Release
