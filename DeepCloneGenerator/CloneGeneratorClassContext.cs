@@ -38,7 +38,7 @@ public class CloneGeneratorClassContext : IDisposable
 
     public void Do(ref SourceProductionContext ctx)
     {
-        var className = _classSymbol.Name;
+        var typeName = _classSymbol.Name;
         var hierarchy = EnumerateParentHierarchy(_classSymbol);
 
         foreach (var item in hierarchy)
@@ -72,13 +72,13 @@ public class CloneGeneratorClassContext : IDisposable
             return;
         }
 
-        _writer.WriteLine($"partial {type} {className} : {Namespace}.{InterfaceName}<{className}>");
+        _writer.WriteLine($"partial {type} {typeName} : {Namespace}.{InterfaceName}<{typeName}>");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
 
         if (!HasCtorDefined(_classSymbol))
         {
-            _writer.WriteLine($"public {className}() {{ }}");
+            _writer.WriteLine($"public {typeName}() {{ }}");
             _writer.WriteLine();
         }
 
@@ -87,7 +87,7 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.WriteLine("[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]");
         }
 
-        _writer.WriteLine($"private {className}({className} {CtorVariableName})");
+        _writer.WriteLine($"private {typeName}({typeName} {CtorVariableName})");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
         var nonCompilerGeneratedMembers = _classSymbol.GetMembers()
@@ -126,10 +126,10 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         _writer.WriteLine();
-        _writer.WriteLine($"public {className} {CloneMethodName}()");
+        _writer.WriteLine($"public {typeName} {CloneMethodName}()");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
-        _writer.WriteLine($"return new {className}(this);");
+        _writer.WriteLine($"return new {typeName}(this);");
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         _writer.Indent--;
@@ -144,7 +144,7 @@ public class CloneGeneratorClassContext : IDisposable
         var fileNameElements = hierarchy
             .OfType<ITypeSymbol>()
             .Select(typeSymbol => typeSymbol.Name)
-            .Append(className);
+            .Append(typeName);
 
         var fileName = string.Join(".", fileNameElements);
 
