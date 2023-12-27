@@ -1,10 +1,6 @@
 ﻿{
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "DebugRoslynSourceGenerator": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "../DeepCloneGenerator.Sample/DeepCloneGenerator.Sample.csproj"
-    },
     "DebugTestsRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "../DeepCloneGenerator.Tests/DeepCloneGenerator.Tests.csproj"

@@ -14,7 +14,7 @@ public class CloneGeneratorContext
         _classSymbols = classSymbols;
         Compilation = compilation;
         var classesInAssemblyGeneratingClone = classSymbols
-            .Select(c => $"{c.ContainingNamespace.ToDisplayString()}.{c.Name}")
+            .Select(c => c.ToDisplayString())
             .ToImmutableHashSet();
         ClassesInAssemblyGeneratingClone = classesInAssemblyGeneratingClone;
     }

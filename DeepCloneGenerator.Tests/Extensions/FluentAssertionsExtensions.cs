@@ -23,13 +23,11 @@ public static class FluentAssertionsExtensions
             var subject = comparands.Subject;
             var expectation = comparands.Expectation;
 
-            if (!comparands.RuntimeType.IsClass || comparands.RuntimeType == typeof(string))
+            if (comparands.RuntimeType.IsClass && comparands.RuntimeType != typeof(string))
             {
-                return EquivalencyResult.ContinueWithNext;
+                subject.Should()
+                    .NotBeSameAs(expectation);
             }
-
-            subject.Should()
-                .NotBeSameAs(expectation);
 
             return EquivalencyResult.ContinueWithNext;
         }

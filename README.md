@@ -28,13 +28,11 @@ The following types are supported for deep cloning:
 - Any concrete class which implements `ICollection<T>` and has a parameterless ctor (like `List<T>` and `HashSet<T>`)
 - Any `IEnumerable<T>` (the clone will have a List<T> with the values of the original cloned)
 - Any concrete class which implements `IDictionary<T, V>` and has a parameterless ctor (like `Dictionary<T, V>`)
-- Any struct with only value types in it (because that works by default in C#)
+- Any struct
 
 ## Known limitations
 
 - Records are currently not supported
-- Structs are currently not supported (they are cloned when part of a class, but not deeply cloned, so if your struct
-  only contains value types it will work)
 - When collections are made with certain characteristics, those characteristics are currently lost (e.g.: an
   EqualityComparer for a Dictionary)
 - Classes with primary constructors are not yet supported

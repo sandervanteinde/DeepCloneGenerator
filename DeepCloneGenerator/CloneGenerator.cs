@@ -20,7 +20,7 @@ public class CloneGenerator : IIncrementalGenerator
 
           namespace {{Namespace}}
           {
-              [System.AttributeUsage(System.AttributeTargets.Class)]
+              [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct)]
               internal class {{AttributeName}} : System.Attribute
               {
               }
