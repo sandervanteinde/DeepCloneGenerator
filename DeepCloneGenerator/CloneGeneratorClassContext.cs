@@ -147,16 +147,17 @@ public class CloneGeneratorClassContext : IDisposable
             .Append(typeName);
 
         var fileName = string.Join(".", fileNameElements);
+        var sourceCode = _mandatoryNamespaces.Count == 0
+            ? _stringWriter.ToString()
+            : $"""
+               {string.Join(_stringWriter.NewLine, _mandatoryNamespaces.OrderBy(c => c).Select(c => $"using {c};"))}
+
+               {_stringWriter}
+               """;
 
         ctx.AddSource(
             $"{fileName}.g.cs",
-            _mandatoryNamespaces.Count == 0
-                ? _stringWriter.ToString()
-                : $"""
-                   {string.Join(_stringWriter.NewLine, _mandatoryNamespaces.OrderBy(c => c).Select(c => $"using {c};"))}
-
-                   {_stringWriter}
-                   """
+            sourceCode
         );
     }
 
@@ -265,16 +266,46 @@ public class CloneGeneratorClassContext : IDisposable
     private string WriteArrayClone(string variableName, ITypeSymbol elementType)
     {
         var variableNameToAssign = NextUniqueVariableName();
-        var elementTypeAsName = elementType.ToDisplayString();
-        _writer.WriteLine($"var {variableNameToAssign} = ReferenceEquals({variableName}, null) ? null : new {elementTypeAsName}[{variableName}.Length];");
-        _writer.WriteLine($"for(var i = 0; i < {variableNameToAssign}?.Length; i++)");
+        var depth = GetDepth(elementType);
+
+        var elementTypeAsName = elementType.ToDisplayString()
+            .TrimEnd('[', ']');
+        var iteratorName = NextUniqueVariableName();
+        _writer.Write($"var {variableNameToAssign} = ReferenceEquals({variableName}, null) ? null : new {elementTypeAsName}[{variableName}.Length]");
+
+        var additionalBracketCount = depth - 1;
+
+        for (var j = 0; j < additionalBracketCount; j++)
+        {
+            _writer.Write(value: "[]");
+        }
+
+        _writer.WriteLine(value: ';');
+        _writer.WriteLine($"for(var {iteratorName} = 0; {iteratorName} < {variableNameToAssign}?.Length; {iteratorName}++)");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
-        var elementVariableName = WriteCloneLogic($"{variableName}[i]", elementType);
-        _writer.WriteLine($"{variableNameToAssign}[i] = {elementVariableName};");
+
+        var elementVariableName = WriteCloneLogic($"{variableName}[{iteratorName}]", elementType);
+        _writer.WriteLine($"{variableNameToAssign}[{iteratorName}] = {elementVariableName};");
+
         _writer.Indent--;
         _writer.WriteLine("}");
+
         return variableNameToAssign;
+
+        static int GetDepth(ITypeSymbol currentElementType)
+        {
+            var currentElement = currentElementType;
+            var count = 1;
+
+            while (currentElement is IArrayTypeSymbol innerArray)
+            {
+                count++;
+                currentElement = innerArray.ElementType;
+            }
+
+            return count;
+        }
     }
 
     private void AddNamespace(string @namespace)
