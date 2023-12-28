@@ -177,7 +177,11 @@ public class CloneGeneratorClassContext : IDisposable
 
             if (type == "class")
             {
-                _writer.Write("virtual ");
+                _writer.Write(
+                    hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true
+                        ? "override "
+                        : "virtual "
+                );
             }
 
             _writer.WriteLine($"{typeName} {CloneMethodName}()");

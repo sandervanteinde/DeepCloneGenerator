@@ -41,6 +41,16 @@ public partial class ClassInheritanceTests
             .BeExactClone(original);
     }
 
+    [Fact]
+    public void TestWithParentOfParentBeingAssignedToParent()
+    {
+        ParentClass original = new ParentOfParentClass { BaseProperty = "Hello", ParentProperty = "World", ParentOfParentProperty = "!" };
+
+        var clone = original.DeepClone();
+        clone.Should()
+            .BeExactClone(original);
+    }
+
     [GenerateDeepClone]
     private abstract partial class BaseClass
     {
