@@ -275,7 +275,7 @@ public class CloneGeneratorClassContext : IDisposable
     {
         if (returnType is IArrayTypeSymbol arraySymbol)
         {
-            return WriteArrayClone(variableName, arraySymbol.ElementType);
+            return WriteArrayClone(variableName, arraySymbol);
         }
 
         if (IsDictionaryWithParameterlessConstructor(returnType, out var keyType, out var valueType))
@@ -336,15 +336,35 @@ public class CloneGeneratorClassContext : IDisposable
         return variableNameToAssign;
     }
 
-    private string WriteArrayClone(string variableName, ITypeSymbol elementType)
+    private string WriteArrayClone(string variableName, IArrayTypeSymbol arrayType)
     {
+        var elementType = arrayType.ElementType;
         var variableNameToAssign = NextUniqueVariableName();
         var depth = GetDepth(elementType);
 
-        var elementTypeAsName = elementType.ToDisplayString()
+        var gotoName = NextUniqueVariableName();
+
+        var elementTypeAsName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
             .TrimEnd('[', ']');
-        var iteratorName = NextUniqueVariableName();
-        _writer.Write($"var {variableNameToAssign} = ReferenceEquals({variableName}, null) ? null : new {elementTypeAsName}[{variableName}.Length]");
+        var lengths = new List<string>(arrayType.Rank);
+
+        _writer.WriteLine($"{arrayType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} {variableNameToAssign};");
+        _writer.WriteLine($"if(ReferenceEquals({variableName}, null))");
+        _writer.WriteLine(value: '{');
+        _writer.Indent++;
+        _writer.WriteLine($"{variableNameToAssign} = null;");
+        _writer.WriteLine($"goto {gotoName};");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
+
+        for (var i = 0; i < arrayType.Rank; i++)
+        {
+            var lengthVariableName = NextUniqueVariableName();
+            _writer.WriteLine($"var {lengthVariableName} = {variableName}.GetLength({i});");
+            lengths.Add(lengthVariableName);
+        }
+
+        _writer.Write($"{variableNameToAssign} = new {elementTypeAsName}[{string.Join(", ", lengths)}]");
 
         var additionalBracketCount = depth - 1;
 
@@ -353,16 +373,31 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.Write(value: "[]");
         }
 
+        var iteratorNames = lengths
+            .Select(_ => NextUniqueVariableName())
+            .ToList();
+
         _writer.WriteLine(value: ';');
-        _writer.WriteLine($"for(var {iteratorName} = 0; {iteratorName} < {variableNameToAssign}?.Length; {iteratorName}++)");
-        _writer.WriteLine(value: '{');
-        _writer.Indent++;
 
-        var elementVariableName = WriteCloneLogic($"{variableName}[{iteratorName}]", elementType);
-        _writer.WriteLine($"{variableNameToAssign}[{iteratorName}] = {elementVariableName};");
+        for (var i = 0; i < iteratorNames.Count; i++)
+        {
+            var iteratorName = iteratorNames[i];
+            _writer.WriteLine($"for(var {iteratorName} = 0; {iteratorName} < {lengths[i]}; {iteratorName}++)");
+            _writer.WriteLine(value: '{');
+            _writer.Indent++;
+        }
 
-        _writer.Indent--;
-        _writer.WriteLine("}");
+        var index = string.Join(", ", iteratorNames);
+        var elementVariableName = WriteCloneLogic($"{variableName}[{index}]", elementType);
+        _writer.WriteLine($"{variableNameToAssign}[{index}] = {elementVariableName};");
+
+        for (var i = 0; i < iteratorNames.Count; i++)
+        {
+            _writer.Indent--;
+            _writer.WriteLine(value: '}');
+        }
+
+        _writer.WriteLine($"{gotoName}:");
 
         return variableNameToAssign;
 
