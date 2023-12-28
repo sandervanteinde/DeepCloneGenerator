@@ -57,6 +57,7 @@ public class CloneGeneratorClassContext : IDisposable
                         return;
                     }
 
+                    _writer.WriteDebugCommentLine($"itemType {itemType}");
                     _writer.WriteLine($"partial {itemType} {item.Name}");
                     _writer.WriteLine(value: '{');
                     _writer.Indent++;
@@ -72,9 +73,21 @@ public class CloneGeneratorClassContext : IDisposable
             return;
         }
 
-        _writer.WriteLine($"partial {type} {typeName} : {Namespace}.{InterfaceName}<{typeName}>");
+        _writer.Write($"partial {type} {typeName}");
+
+        _writer.WriteInLineParameterValue(_classSymbol.IsAbstract, nameof(_classSymbol.IsAbstract));
+
+        if (!_classSymbol.IsAbstract)
+        {
+            _writer.Write($" : {Namespace}.{InterfaceName}<{typeName}>");
+        }
+
+        _writer.WriteLine();
         _writer.WriteLine(value: '{');
         _writer.Indent++;
+
+        var hasCtorDefined = HasCtorDefined(_classSymbol);
+        _writer.WriteParameterValue(hasCtorDefined, nameof(hasCtorDefined));
 
         if (!HasCtorDefined(_classSymbol))
         {
@@ -82,22 +95,53 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.WriteLine();
         }
 
-        if (HasRequiredMembers(_classSymbol))
+        var hasRequiredMembers = HasRequiredMembers(_classSymbol);
+        _writer.WriteParameterValue(hasRequiredMembers, nameof(hasRequiredMembers));
+
+        if (hasRequiredMembers)
         {
             _writer.WriteLine("[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]");
         }
 
-        _writer.WriteLine($"private {typeName}({typeName} {CtorVariableName})");
+        var ctorAccessibility = _classSymbol.IsSealed
+            ? "private"
+            : "protected";
+        _writer.WriteLine($"{ctorAccessibility} {typeName}({typeName} {CtorVariableName})");
+
+        var hasBaseClass = TryGetBaseClass(out var baseClass);
+        var isBaseClassDeepCloneable = hasBaseClass && IsTypeDeepCloneable(baseClass!);
+
+        _writer.WriteParameterValue(isBaseClassDeepCloneable, nameof(isBaseClassDeepCloneable));
+
+        if (isBaseClassDeepCloneable)
+        {
+            _writer.Indent++;
+            _writer.WriteLine($": base({CtorVariableName})");
+            _writer.Indent--;
+        }
+
         _writer.WriteLine(value: '{');
         _writer.Indent++;
         var nonCompilerGeneratedMembers = _classSymbol.GetMembers()
             .Where(symbol => symbol.CanBeReferencedByName);
+
+        if (hasBaseClass && !isBaseClassDeepCloneable)
+        {
+            while (baseClass is not null)
+            {
+                var accessibleBaseClassMembers = baseClass.GetMembers()
+                    .Where(symbol => symbol.CanBeReferencedByName && symbol.DeclaredAccessibility is not Accessibility.Private);
+                nonCompilerGeneratedMembers = nonCompilerGeneratedMembers.Concat(accessibleBaseClassMembers);
+                baseClass = baseClass.BaseType;
+            }
+        }
 
         foreach (var member in nonCompilerGeneratedMembers)
         {
             if (member.GetAttributes()
                 .Any(c => c.AttributeClass?.Name == IgnoreCloneAttribute))
             {
+                _writer.WriteDebugCommentLine($"Member {member.Name} skipped due to {IgnoreCloneAttribute}");
                 continue;
             }
 
@@ -126,12 +170,24 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         _writer.WriteLine();
-        _writer.WriteLine($"public {typeName} {CloneMethodName}()");
-        _writer.WriteLine(value: '{');
-        _writer.Indent++;
-        _writer.WriteLine($"return new {typeName}(this);");
-        _writer.Indent--;
-        _writer.WriteLine(value: '}');
+
+        if (!_classSymbol.IsAbstract)
+        {
+            _writer.Write("public ");
+
+            if (type == "class")
+            {
+                _writer.Write("virtual ");
+            }
+
+            _writer.WriteLine($"{typeName} {CloneMethodName}()");
+            _writer.WriteLine(value: '{');
+            _writer.Indent++;
+            _writer.WriteLine($"return new {typeName}(this);");
+            _writer.Indent--;
+            _writer.WriteLine(value: '}');
+        }
+
         _writer.Indent--;
         _writer.WriteLine(value: '}');
 
@@ -159,6 +215,19 @@ public class CloneGeneratorClassContext : IDisposable
             $"{fileName}.g.cs",
             sourceCode
         );
+    }
+
+    private bool TryGetBaseClass(out INamedTypeSymbol? namedTypeSymbol)
+    {
+        // object is the only type without a base type, so if this is object this will not match
+        if (_classSymbol is { BaseType: { ContainingNamespace.Name: not "System", Name: not "Object" and not "ValueType" } actualBaseType })
+        {
+            namedTypeSymbol = actualBaseType;
+            return true;
+        }
+
+        namedTypeSymbol = default!;
+        return false;
     }
 
     private IReadOnlyCollection<ISymbol> EnumerateParentHierarchy(ISymbol symbol)
@@ -224,10 +293,14 @@ public class CloneGeneratorClassContext : IDisposable
             return WriteEnumerableClone($"(({enumerableType!.ToDisplayString()}){variableName})", enumerableType);
         }
 
-        var returnTypeName = returnType.ToDisplayString();
-        var isCloneMethodAvailable = _context.ClassesInAssemblyGeneratingClone.Contains(returnTypeName)
-            || returnType.AllInterfaces.Any(c => c.Name == InterfaceName);
-        return $"{variableName}{(isCloneMethodAvailable ? $"?.{CloneMethodName}()" : string.Empty)}";
+        return $"{variableName}{(IsTypeDeepCloneable(returnType) ? $"?.{CloneMethodName}()" : string.Empty)}";
+    }
+
+    private bool IsTypeDeepCloneable(ITypeSymbol type)
+    {
+        var typeName = type.ToDisplayString();
+        return _context.ClassesInAssemblyGeneratingClone.Contains(typeName)
+            || type.AllInterfaces.Any(c => c.Name == InterfaceName);
     }
 
     private string WriteDictionaryClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol keyType, ITypeSymbol valueType)
@@ -426,7 +499,7 @@ public class CloneGeneratorClassContext : IDisposable
 
         while (i < 10_000)
         {
-            yield return $"__codeGeneratedTemporaryVariable{i++}";
+            yield return $"temp{i++}";
         }
     }
 
