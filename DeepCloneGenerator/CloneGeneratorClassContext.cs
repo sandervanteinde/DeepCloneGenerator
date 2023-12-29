@@ -38,7 +38,9 @@ public class CloneGeneratorClassContext : IDisposable
 
     public void Do(ref SourceProductionContext ctx)
     {
-        var typeName = _classSymbol.Name;
+        var simpleTypeName = _classSymbol.Name;
+        var typeName = ClassSymbolName();
+
         var hierarchy = EnumerateParentHierarchy(_classSymbol);
 
         foreach (var item in hierarchy)
@@ -91,7 +93,7 @@ public class CloneGeneratorClassContext : IDisposable
 
         if (!HasCtorDefined(_classSymbol))
         {
-            _writer.WriteLine($"public {typeName}() {{ }}");
+            _writer.WriteLine($"public {simpleTypeName}() {{ }}");
             _writer.WriteLine();
         }
 
@@ -106,7 +108,7 @@ public class CloneGeneratorClassContext : IDisposable
         var ctorAccessibility = _classSymbol.IsSealed
             ? "private"
             : "protected";
-        _writer.WriteLine($"{ctorAccessibility} {typeName}({typeName} {CtorVariableName})");
+        _writer.WriteLine($"{ctorAccessibility} {simpleTypeName}({typeName} {CtorVariableName})");
 
         var hasBaseClass = TryGetBaseClass(out var baseClass);
         var isBaseClassDeepCloneable = hasBaseClass && IsTypeDeepCloneable(baseClass!);
@@ -204,9 +206,10 @@ public class CloneGeneratorClassContext : IDisposable
         var fileNameElements = hierarchy
             .OfType<ITypeSymbol>()
             .Select(typeSymbol => typeSymbol.Name)
-            .Append(typeName);
+            .Append(simpleTypeName);
 
         var fileName = string.Join(".", fileNameElements);
+
         var sourceCode = _mandatoryNamespaces.Count == 0
             ? _stringWriter.ToString()
             : $"""
@@ -216,9 +219,19 @@ public class CloneGeneratorClassContext : IDisposable
                """;
 
         ctx.AddSource(
-            $"{fileName}.g.cs",
+            $"{fileName.Replace(oldChar: '<', newChar: '{').Replace(oldChar: '>', newChar: '}')}.g.cs",
             sourceCode
         );
+    }
+
+    private string ClassSymbolName()
+    {
+        if (!_classSymbol.IsGenericType)
+        {
+            return _classSymbol.Name;
+        }
+
+        return $"{_classSymbol.Name}<TOne>";
     }
 
     private bool TryGetBaseClass(out INamedTypeSymbol? namedTypeSymbol)
