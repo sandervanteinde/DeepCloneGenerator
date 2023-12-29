@@ -38,7 +38,9 @@ public class CloneGeneratorClassContext : IDisposable
 
     public void Do(ref SourceProductionContext ctx)
     {
-        var typeName = _classSymbol.Name;
+        var simpleTypeName = _classSymbol.Name;
+        var typeName = ClassSymbolName();
+
         var hierarchy = EnumerateParentHierarchy(_classSymbol);
 
         foreach (var item in hierarchy)
@@ -80,6 +82,12 @@ public class CloneGeneratorClassContext : IDisposable
         if (!_classSymbol.IsAbstract)
         {
             _writer.Write($" : {Namespace}.{InterfaceName}<{typeName}>");
+
+            if (_classSymbol.IsGenericType)
+            {
+                _writer.Write(", ");
+                _writer.Write($"{Namespace}.{GenericInterfaceName}<{typeName}, {string.Join(", ", _classSymbol.TypeArguments.Select(c => c.Name))}>");
+            }
         }
 
         _writer.WriteLine();
@@ -91,7 +99,7 @@ public class CloneGeneratorClassContext : IDisposable
 
         if (!HasCtorDefined(_classSymbol))
         {
-            _writer.WriteLine($"public {typeName}() {{ }}");
+            _writer.WriteLine($"public {simpleTypeName}() {{ }}");
             _writer.WriteLine();
         }
 
@@ -106,7 +114,13 @@ public class CloneGeneratorClassContext : IDisposable
         var ctorAccessibility = _classSymbol.IsSealed
             ? "private"
             : "protected";
-        _writer.WriteLine($"{ctorAccessibility} {typeName}({typeName} {CtorVariableName})");
+        _writer.Write($"{ctorAccessibility} {simpleTypeName}({typeName} {CtorVariableName}");
+
+        ForEachTypeArgument(
+            (typeArgument, index) => { _writer.Write($", {GenericTypeMapperType(typeArgument)} {GenericTypeMapperArgumentName(index)}"); }
+        );
+
+        _writer.WriteLine(value: ')');
 
         var hasBaseClass = TryGetBaseClass(out var baseClass);
         var isBaseClassDeepCloneable = hasBaseClass && IsTypeDeepCloneable(baseClass!);
@@ -178,7 +192,7 @@ public class CloneGeneratorClassContext : IDisposable
         {
             _writer.Write("public ");
 
-            if (type == "class")
+            if (type == "class" && !_classSymbol.IsGenericType)
             {
                 _writer.Write(
                     hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true
@@ -187,12 +201,55 @@ public class CloneGeneratorClassContext : IDisposable
                 );
             }
 
-            _writer.WriteLine($"{typeName} {CloneMethodName}()");
+            _writer.Write($"{typeName} {CloneMethodName}(");
+
+            ForEachTypeArgument(
+                (typeArgument, index) =>
+                {
+                    if (index > 0)
+                    {
+                        _writer.Write(", ");
+                    }
+
+                    _writer.Write($"{GenericTypeMapperType(typeArgument)} {GenericTypeMapperArgumentName(index)}");
+                }
+            );
+            _writer.WriteLine(value: ')');
             _writer.WriteLine(value: '{');
             _writer.Indent++;
-            _writer.WriteLine($"return new {typeName}(this);");
+            _writer.Write($"return new {typeName}(this");
+            ForEachTypeArgument(
+                (_, index) =>
+                {
+                    _writer.Write(", ");
+                    _writer.Write($"mapper{index}");
+                }
+            );
+            _writer.WriteLine(");");
             _writer.Indent--;
             _writer.WriteLine(value: '}');
+
+            if (_classSymbol.IsGenericType)
+            {
+                _writer.WriteLine($"{typeName} {Namespace}.{InterfaceName}<{typeName}>.{CloneMethodName}()");
+                _writer.WriteLine(value: '{');
+                _writer.Indent++;
+                _writer.Write($"return {CloneMethodName}(");
+                ForEachTypeArgument(
+                    (_, index) =>
+                    {
+                        if (index > 0)
+                        {
+                            _writer.Write(", ");
+                        }
+
+                        _writer.Write("static self => self");
+                    }
+                );
+                _writer.WriteLine(");");
+                _writer.Indent--;
+                _writer.WriteLine("}");
+            }
         }
 
         _writer.Indent--;
@@ -207,9 +264,10 @@ public class CloneGeneratorClassContext : IDisposable
         var fileNameElements = hierarchy
             .OfType<ITypeSymbol>()
             .Select(typeSymbol => typeSymbol.Name)
-            .Append(typeName);
+            .Append(simpleTypeName);
 
         var fileName = string.Join(".", fileNameElements);
+
         var sourceCode = _mandatoryNamespaces.Count == 0
             ? _stringWriter.ToString()
             : $"""
@@ -219,9 +277,33 @@ public class CloneGeneratorClassContext : IDisposable
                """;
 
         ctx.AddSource(
-            $"{fileName}.g.cs",
+            $"{fileName.Replace(oldChar: '<', newChar: '{').Replace(oldChar: '>', newChar: '}')}.g.cs",
             sourceCode
         );
+    }
+
+    private void ForEachTypeArgument(Action<ITypeSymbol, int> callback)
+    {
+        if (!_classSymbol.IsGenericType)
+        {
+            return;
+        }
+
+        for (var index = 0; index < _classSymbol.TypeArguments.Length; index++)
+        {
+            var typeArgument = _classSymbol.TypeArguments[index];
+            callback.Invoke(typeArgument, index);
+        }
+    }
+
+    private string ClassSymbolName()
+    {
+        if (!_classSymbol.IsGenericType)
+        {
+            return _classSymbol.Name;
+        }
+
+        return $"{_classSymbol.Name}<TOne>";
     }
 
     private bool TryGetBaseClass(out INamedTypeSymbol? namedTypeSymbol)
@@ -278,6 +360,21 @@ public class CloneGeneratorClassContext : IDisposable
         return _uniqueVariableNames.Current!;
     }
 
+    private static string GenericTypeMapperType(ITypeSymbol type)
+    {
+        return $"Func<{type}, {type}>";
+    }
+
+    private static string GenericTypeMapperArgumentName(int index)
+    {
+        return $"mapper{index}";
+    }
+
+    private string GetGenericTypeMapperVariableName(ITypeParameterSymbol typeSymbol)
+    {
+        return GenericTypeMapperArgumentName(_classSymbol.TypeArguments.IndexOf(typeSymbol));
+    }
+
     private string WriteCloneLogic(string variableName, ITypeSymbol returnType)
     {
         if (returnType is IArrayTypeSymbol arraySymbol)
@@ -298,6 +395,12 @@ public class CloneGeneratorClassContext : IDisposable
         if (IsEnumerableType(returnType, out var enumerableType))
         {
             return WriteEnumerableClone($"(({enumerableType!.ToDisplayString()}){variableName})", enumerableType);
+        }
+
+        if (returnType is ITypeParameterSymbol typeParameter)
+        {
+            var mapperName = GetGenericTypeMapperVariableName(typeParameter);
+            return $"{mapperName}.Invoke({variableName})";
         }
 
         return $"{variableName}{(IsTypeDeepCloneable(returnType) ? $"?.{CloneMethodName}()" : string.Empty)}";

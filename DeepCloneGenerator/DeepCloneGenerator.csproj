@@ -1,9 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <IsPackable>true</IsPackable>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>DeepCloneGenerator</RootNamespace>
+        <IsPackable>true</IsPackable>
         <LangVersion>latest</LangVersion>
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
@@ -12,25 +14,25 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild> <!-- Generates a package at build -->
         <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RootNamespace>DeepCloneGenerator</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Package the generator in the analyzer directory of the nuget package -->
-        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-        <None Include="../README.md" Pack="true" PackagePath="\"/>
-        <None Include="..\NuGet.config">
-          <Link>NuGet.config</Link>
-        </None>
+        <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0"/>
+        <None Include="../README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\NuGet.config">
+            <Link>NuGet.config</Link>
+        </None>
+        <None Include="$(OutputPath)/DeepCloneGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="..\.gitignore">
+            <Link>.gitignore</Link>
+        </Content>
+    </ItemGroup>
 
 </Project>
