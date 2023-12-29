@@ -5,7 +5,7 @@ public partial class ClassInheritanceTests
     [Fact]
     public void TestWithParentHavingAttribute()
     {
-        var original = new ParentClass
+        var original = new ParentClass("abstract property value")
         {
             BaseProperty = "Hello",
             ParentProperty = "World"
@@ -55,28 +55,42 @@ public partial class ClassInheritanceTests
     private abstract partial class BaseClass
     {
         public required string BaseProperty { get; init; }
+        public abstract string AbstractProperty { get; }
     }
 
     private abstract class BaseWithoutAttribute
     {
         public required string BaseProperty { get; init; }
+        public abstract string AbstractProperty { get; }
     }
 
     [GenerateDeepClone]
     private partial class ParentWithBaseWithoutAttribute : BaseWithoutAttribute
     {
         public required string ParentProperty { get; init; }
+        public override string AbstractProperty => "Auto property";
     }
 
     [GenerateDeepClone]
     private partial class ParentClass : BaseClass
     {
+        public ParentClass(string abstractPropertyValue)
+        {
+            AbstractProperty = abstractPropertyValue;
+        }
+
         public required string ParentProperty { get; init; }
+        public override string AbstractProperty { get; }
     }
 
     [GenerateDeepClone]
     private partial class ParentOfParentClass : ParentClass
     {
+        public ParentOfParentClass()
+            : base("Parent of parent")
+        {
+        }
+
         public required string ParentOfParentProperty { get; init; }
     }
 }

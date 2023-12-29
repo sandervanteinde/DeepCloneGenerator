@@ -168,7 +168,10 @@ public class CloneGeneratorClassContext : IDisposable
                 case (IFieldSymbol { CanBeReferencedByName: true, Type: var returnType } field, _):
                     WriteAssignment(field, returnType);
                     break;
-                case (IPropertySymbol { GetMethod: not null, Type: var returnType } propertySymbol, PropertyDeclarationSyntax { AccessorList: not null }):
+                case (IPropertySymbol { GetMethod: not null, Type: var returnType, IsAbstract: false } propertySymbol, PropertyDeclarationSyntax
+                {
+                    AccessorList: not null
+                }):
                 {
                     WriteAssignment(propertySymbol, returnType);
                     break;
