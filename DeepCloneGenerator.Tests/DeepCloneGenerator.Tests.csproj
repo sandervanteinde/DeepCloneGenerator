@@ -24,8 +24,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DeepCloneGenerator.DummyLib\DeepCloneGenerator.DummyLib.csproj" />
-        <ProjectReference Include="..\DeepCloneGenerator\DeepCloneGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\DeepCloneGenerator.DummyLib\DeepCloneGenerator.DummyLib.csproj"/>
+        <ProjectReference Include="..\DeepCloneGenerator\DeepCloneGenerator.csproj"/>
+        <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
 </Project>

@@ -12,7 +12,7 @@ public partial class GenericTests
             One = 1
         };
 
-        var clone = original.DeepClone();
+        var clone = original.DeepClone(c => c);
 
         clone.Should()
             .BeExactClone(original);
