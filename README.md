@@ -29,16 +29,13 @@ The following types are supported for deep cloning:
 - Any `IEnumerable<T>` (the clone will have a List<T> with the values of the original cloned)
 - Any concrete class which implements `IDictionary<T, V>` and has a parameterless ctor (like `Dictionary<T, V>`)
 - Any struct
+- Any record
 
 ## Known limitations
 
-- Records are currently not supported
 - When collections are made with certain characteristics, those characteristics are currently lost (e.g.: an
   EqualityComparer for a Dictionary)
 - Classes with primary constructors are not yet supported
-- Classes get a `ISourceGeneratedCloneable<TSelf>` interface when they are targeted by the source generator. This
-  interface can be referenced from within the assembly, but outside of the assembly you cannot reference the interface (
-  each assembly has its own `ISourceGeneratedCloneable<TSelf>` interface definition thus they do not match.)
 
 ## Future plans
 

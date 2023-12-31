@@ -150,6 +150,11 @@ public class CloneGeneratorClassContext : IDisposable
             }
         }
 
+        if (type == "record")
+        {
+            ;
+        }
+
         foreach (var member in nonCompilerGeneratedMembers)
         {
             if (member.GetAttributes()
@@ -177,8 +182,16 @@ public class CloneGeneratorClassContext : IDisposable
                     {
                         WriteAssignment(propertySymbol, returnType);
                     }
+
                     break;
                 }
+                case (IPropertySymbol { Type: var returnType, IsAbstract: false } propertySymbol, ParameterSyntax):
+                    if (propertySymbol.IsAutoProperty())
+                    {
+                        WriteAssignment(propertySymbol, returnType);
+                    }
+
+                    break;
                 default:
 #if DEBUG
                     Console.WriteLine($"Class {_classSymbol.Name} skipped generation of field {member.Name}");
@@ -198,7 +211,8 @@ public class CloneGeneratorClassContext : IDisposable
             if (type == "class" && !_classSymbol.IsGenericType)
             {
                 _writer.Write(
-                    hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true && baseClass?.TypeArguments.Length == _classSymbol.TypeArguments.Length
+                    hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true
+                    && baseClass?.TypeArguments.Length == _classSymbol.TypeArguments.Length
                         ? "override "
                         : "virtual "
                 );
@@ -294,17 +308,19 @@ public class CloneGeneratorClassContext : IDisposable
         }
 
         _writer.Write($": base({ctorVariableName}");
+
         for (var i = 0; i < namedTypeSymbol.TypeArguments.Length; i++)
         {
             _writer.WriteLine($", static mapper{i} =>");
-            _writer.WriteLine('{');
+            _writer.WriteLine(value: '{');
             _writer.Indent++;
             var variableName = WriteCloneLogic($"mapper{i}", namedTypeSymbol.TypeArguments[i]);
             _writer.WriteLine($"return {variableName};");
             _writer.Indent--;
-            _writer.Write('}');
+            _writer.Write(value: '}');
         }
-        _writer.WriteLine(')');
+
+        _writer.WriteLine(value: ')');
     }
 
     private void ForEachTypeArgument(Action<ITypeSymbol, int> callback)
@@ -447,7 +463,7 @@ public class CloneGeneratorClassContext : IDisposable
             var mapper = NextUniqueVariableName();
             var mapperArgument = NextUniqueVariableName();
             _writer.WriteLine($"var {mapper} = static ({typeArgument.ToDisplayString()} {mapperArgument}) =>");
-            _writer.WriteLine('{');
+            _writer.WriteLine(value: '{');
             _writer.Indent++;
             var cloneVariableName = WriteCloneLogic(mapperArgument, typeArgument);
             _writer.WriteLine($"return {cloneVariableName};");
@@ -455,7 +471,6 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.WriteLine("};");
             typeArgumentsVariables.Add(mapper);
         }
-        
 
         return $"{variableName}.DeepClone({string.Join(", ", typeArgumentsVariables)})";
     }
@@ -469,7 +484,7 @@ public class CloneGeneratorClassContext : IDisposable
         {
             return true;
         }
-        
+
         // find if it is going to be generated
         var originalDefinition = returnType.OriginalDefinition.ToDisplayString();
 
