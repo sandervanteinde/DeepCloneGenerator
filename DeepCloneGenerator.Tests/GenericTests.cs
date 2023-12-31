@@ -35,6 +35,48 @@ public partial class GenericTests
             .BeExactClone(original);
     }
 
+    [Fact]
+    public void ClassContainingGenericTest()
+    {
+        var original = new ClassContainingGeneric
+        {
+            Test = new()
+            {
+                One = new()
+                {
+                    One = "Test"
+                }
+            }
+        };
+
+        var clone = original.DeepClone();
+        clone.Should()
+            .BeExactClone(original);
+    }
+
+    [Fact]
+    public void ClassExtendingGenericTest()
+    {
+        var original = new ClassExtendingGeneric
+        {
+            One = 123
+        };
+
+        var clone = original.DeepClone();
+
+        clone.Should()
+            .BeExactClone(original);
+    }
+
+    [GenerateDeepClone]
+    private partial class ClassExtendingGeneric : OneGenericClass<int>
+    {
+        public ClassExtendingGeneric()
+        {
+            
+        }
+    }
+
     [GenerateDeepClone]
     private partial class OneGenericClass<TOne>
     {
@@ -45,5 +87,11 @@ public partial class GenericTests
     private partial class OnesGenericClass<TOne>
     {
         public required List<TOne> Ones { get; init; }
+    }
+
+    [GenerateDeepClone]
+    private partial class ClassContainingGeneric
+    {
+        public required OneGenericClass<OneGenericClass<string>> Test { get; init; }
     }
 }

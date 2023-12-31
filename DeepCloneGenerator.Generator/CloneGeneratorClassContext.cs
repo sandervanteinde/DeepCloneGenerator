@@ -130,7 +130,7 @@ public class CloneGeneratorClassContext : IDisposable
         if (isBaseClassDeepCloneable)
         {
             _writer.Indent++;
-            _writer.WriteLine($": base({CtorVariableName})");
+            WriteBaseCloneableInvocation(CtorVariableName, baseClass!);
             _writer.Indent--;
         }
 
@@ -195,7 +195,7 @@ public class CloneGeneratorClassContext : IDisposable
             if (type == "class" && !_classSymbol.IsGenericType)
             {
                 _writer.Write(
-                    hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true
+                    hasBaseClass && isBaseClassDeepCloneable && baseClass?.IsAbstract is not true && baseClass?.TypeArguments.Length == _classSymbol.TypeArguments.Length
                         ? "override "
                         : "virtual "
                 );
@@ -280,6 +280,28 @@ public class CloneGeneratorClassContext : IDisposable
             $"{fileName.Replace(oldChar: '<', newChar: '{').Replace(oldChar: '>', newChar: '}')}.g.cs",
             sourceCode
         );
+    }
+
+    private void WriteBaseCloneableInvocation(string ctorVariableName, INamedTypeSymbol namedTypeSymbol)
+    {
+        if (namedTypeSymbol.TypeArguments.Length == 0)
+        {
+            _writer.WriteLine($": base({ctorVariableName})");
+            return;
+        }
+
+        _writer.Write($": base({ctorVariableName}");
+        for (var i = 0; i < namedTypeSymbol.TypeArguments.Length; i++)
+        {
+            _writer.WriteLine($", static mapper{i} =>");
+            _writer.WriteLine('{');
+            _writer.Indent++;
+            var variableName = WriteCloneLogic($"mapper{i}", namedTypeSymbol.TypeArguments[i]);
+            _writer.WriteLine($"return {variableName};");
+            _writer.Indent--;
+            _writer.Write('}');
+        }
+        _writer.WriteLine(')');
     }
 
     private void ForEachTypeArgument(Action<ITypeSymbol, int> callback)
@@ -403,14 +425,66 @@ public class CloneGeneratorClassContext : IDisposable
             return $"{mapperName}.Invoke({variableName})";
         }
 
+        if (IsGenericDeepCloneable(returnType, out var implementedInterface))
+        {
+            return WriteGenericDeepCloneLogic(variableName, implementedInterface!);
+        }
+
         return $"{variableName}{(IsTypeDeepCloneable(returnType) ? $"?.{CloneMethodName}()" : string.Empty)}";
+    }
+
+    private string WriteGenericDeepCloneLogic(string variableName, INamedTypeSymbol implementedInterface)
+    {
+        _writer.WriteDebugCommentLine($"{implementedInterface.ToDisplayString()} detected");
+        var typeArguments = implementedInterface.TypeArguments;
+        var typeArgumentsVariables = new List<string>();
+
+        foreach (var typeArgument in typeArguments)
+        {
+            var mapper = NextUniqueVariableName();
+            var mapperArgument = NextUniqueVariableName();
+            _writer.WriteLine($"var {mapper} = static ({typeArgument.ToDisplayString()} {mapperArgument}) =>");
+            _writer.WriteLine('{');
+            _writer.Indent++;
+            var cloneVariableName = WriteCloneLogic(mapperArgument, typeArgument);
+            _writer.WriteLine($"return {cloneVariableName};");
+            _writer.Indent--;
+            _writer.WriteLine("};");
+            typeArgumentsVariables.Add(mapper);
+        }
+        
+
+        return $"{variableName}.DeepClone({string.Join(", ", typeArgumentsVariables)})";
+    }
+
+    private bool IsGenericDeepCloneable(ITypeSymbol returnType, out INamedTypeSymbol? typeSymbol)
+    {
+        typeSymbol = returnType.AllInterfaces
+            .FirstOrDefault(c => c.Name is GenericInterfaceName);
+
+        if (typeSymbol is not null)
+        {
+            return true;
+        }
+        
+        // find if it is going to be generated
+        var originalDefinition = returnType.OriginalDefinition.ToDisplayString();
+
+        if (_context.ClassesInAssemblyGeneratingClone.Contains(originalDefinition))
+        {
+            typeSymbol = (INamedTypeSymbol)returnType;
+            return true;
+        }
+
+        return false;
     }
 
     private bool IsTypeDeepCloneable(ITypeSymbol type)
     {
         var typeName = type.ToDisplayString();
         return _context.ClassesInAssemblyGeneratingClone.Contains(typeName)
-            || type.AllInterfaces.Any(c => c.Name == InterfaceName);
+            || type.AllInterfaces.Any(c => c.Name == InterfaceName)
+            || (type.OriginalDefinition is INamedTypeSymbol { TypeArguments.Length: > 0 } && IsTypeDeepCloneable(type.OriginalDefinition));
     }
 
     private string WriteDictionaryClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol keyType, ITypeSymbol valueType)
@@ -656,7 +730,8 @@ public class CloneGeneratorClassContext : IDisposable
     private static bool HasRequiredMembers(INamespaceOrTypeSymbol symbol)
     {
         return symbol.GetMembers()
-            .Any(member => member is IFieldSymbol { IsRequired: true } or IPropertySymbol { IsRequired: true });
+                .Any(member => member is IFieldSymbol { IsRequired: true } or IPropertySymbol { IsRequired: true })
+            || (symbol is ITypeSymbol { BaseType: { } baseType } && HasRequiredMembers(baseType));
     }
 
     private bool TryInterpretType(ITypeSymbol symbol, out string interpretedType)
