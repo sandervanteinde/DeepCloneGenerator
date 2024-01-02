@@ -499,10 +499,14 @@ public class CloneGeneratorClassContext : IDisposable
 
     private bool IsTypeDeepCloneable(ITypeSymbol type)
     {
+        // if (_classSymbol.Name == "Property")
+        // {
+        //     return false;
+        // }
         var typeName = type.ToDisplayString();
         return _context.ClassesInAssemblyGeneratingClone.Contains(typeName)
             || type.AllInterfaces.Any(c => c.Name == InterfaceName)
-            || (type.OriginalDefinition is INamedTypeSymbol { TypeArguments.Length: > 0 } && IsTypeDeepCloneable(type.OriginalDefinition));
+            || (!type.Equals(type.OriginalDefinition, SymbolEqualityComparer.Default) && type.OriginalDefinition is INamedTypeSymbol { TypeArguments.Length: > 0 } && IsTypeDeepCloneable(type.OriginalDefinition));
     }
 
     private string WriteDictionaryClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol keyType, ITypeSymbol valueType)

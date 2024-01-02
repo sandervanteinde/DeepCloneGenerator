@@ -7,7 +7,8 @@ public partial class ClassWithPropertyTests
     {
         var original = new ClassWithNonAutoProperty
         {
-            Hours = 2
+            Hours = 2,
+            EnumValue = EnumValue.Three
         };
 
         var clone = original.DeepClone();
@@ -16,10 +17,18 @@ public partial class ClassWithPropertyTests
             .BeExactClone(original);
     }
 
+    public enum EnumValue
+    {
+        One,
+        Two,
+        Three
+    }
+
     [GenerateDeepClone]
     private partial class ClassWithNonAutoProperty
     {
         public required int Hours { get; set; }
+        public required EnumValue EnumValue { get; set; }
         public int Minutes
         {
             get { return Hours * 60; }
