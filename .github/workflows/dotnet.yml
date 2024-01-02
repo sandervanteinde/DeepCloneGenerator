@@ -40,7 +40,13 @@ jobs:
       - name: Test
         run: dotnet test --no-build --verbosity normal  -c Release
 
-      - name: Publish Nuget to GitHub registry
+      - name: Publish Generator Nuget to NuGet
+        run: dotnet nuget push ./artifacts/package/release/DeepCloneGenerator.Generator.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg -k ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        if: github.event_name != 'pull_request'
+
+      - name: Publish class library NuGet to NuGet
         run: dotnet nuget push ./artifacts/package/release/DeepCloneGenerator.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg -k ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

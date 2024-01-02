@@ -7,18 +7,14 @@
         <RootNamespace>DeepCloneGenerator</RootNamespace>
         <IsPackable>true</IsPackable>
         <LangVersion>latest</LangVersion>
-
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <IsRoslynComponent>true</IsRoslynComponent>
         <PackageId>DeepCloneGenerator</PackageId>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild> <!-- Generates a package at build -->
-        <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RootNamespace>DeepCloneGenerator</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference PrivateAssets="All" Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
+        <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
