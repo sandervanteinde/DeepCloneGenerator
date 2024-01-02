@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
+        <ProjectReference PrivateAssets="All" Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -27,12 +27,6 @@
             <Link>NuGet.config</Link>
         </None>
         <None Include="$(OutputPath)/DeepCloneGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="..\.gitignore">
-            <Link>.gitignore</Link>
-        </Content>
     </ItemGroup>
 
 </Project>
