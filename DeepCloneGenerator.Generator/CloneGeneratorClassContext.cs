@@ -344,7 +344,7 @@ public class CloneGeneratorClassContext : IDisposable
             return _classSymbol.Name;
         }
 
-        return $"{_classSymbol.Name}<TOne>";
+        return $"{_classSymbol.Name}<{string.Join(", ", _classSymbol.TypeArguments.Select(c => c.Name))}>";
     }
 
     private bool TryGetBaseClass(out INamedTypeSymbol? namedTypeSymbol)

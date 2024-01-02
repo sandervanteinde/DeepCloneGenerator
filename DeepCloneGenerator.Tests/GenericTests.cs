@@ -9,7 +9,7 @@ public partial class GenericTests
     {
         var original = new OneGenericClass<int>
         {
-            One = 1
+            Value = 1
         };
 
         var clone = original.DeepClone(c => c);
@@ -23,7 +23,7 @@ public partial class GenericTests
     {
         var original = new OneGenericClass<DummyClass>
         {
-            One = new DummyClass
+            Value = new DummyClass
             {
                 Value = "Some value"
             }
@@ -42,9 +42,9 @@ public partial class GenericTests
         {
             Test = new()
             {
-                One = new()
+                Value = new()
                 {
-                    One = "Test"
+                    Value = "Test"
                 }
             }
         };
@@ -59,7 +59,7 @@ public partial class GenericTests
     {
         var original = new ClassExtendingGeneric
         {
-            One = 123
+            Value = 123
         };
 
         var clone = original.DeepClone();
@@ -78,9 +78,9 @@ public partial class GenericTests
     }
 
     [GenerateDeepClone]
-    private partial class OneGenericClass<TOne>
+    private partial class OneGenericClass<TValue>
     {
-        public required TOne One { get; init; }
+        public required TValue Value { get; init; }
     }
 
     [GenerateDeepClone]
