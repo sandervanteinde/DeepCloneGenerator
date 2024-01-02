@@ -28,6 +28,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <None Include="$(OutputPath)/DeepCloneGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
         <None Include="../README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
