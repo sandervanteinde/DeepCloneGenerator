@@ -1,24 +1,52 @@
-﻿namespace DeepCloneGenerator.Tests;
-
-public partial class ArrayCloningTests
+﻿
+namespace DeepCloneGenerator.Tests
 {
-    [Fact]
-    public void Test()
+    using TotallyDifferentNamespace;
+
+    public partial class ArrayCloningTests
     {
-        var original = new ClassWithArray
+        [Fact]
+        public void Test()
         {
-            Integers = new[] { 1, 2, 3, 4, 5, 6 }
-        };
+            var original = new ClassWithArray
+            {
+                Integers = new[] { 1, 2, 3, 4, 5, 6 }
+            };
 
-        var clone = original.DeepClone();
+            var clone = original.DeepClone();
 
-        clone.Should()
-            .BeExactClone(original);
+            clone.Should()
+                .BeExactClone(original);
+        }
+
+        [Fact]
+        public void OtherNamespaceTest()
+        {
+            var original = new ClassWithArrayFromDifferentNamespace { OtherNamespaceProp = new[] { EnumFromOtherNamespace.A, EnumFromOtherNamespace.B } };
+            var clone = original.DeepClone();
+            clone.Should()
+                .BeExactClone(original);
+        }
+
+        [GenerateDeepClone]
+        private partial class ClassWithArray
+        {
+            public int[] Integers { get; init; }
+        }
+
+        [GenerateDeepClone]
+        private partial class ClassWithArrayFromDifferentNamespace
+        {
+            public EnumFromOtherNamespace[] OtherNamespaceProp { get; init; }
+        }
     }
+}
 
-    [GenerateDeepClone]
-    private partial class ClassWithArray
+namespace TotallyDifferentNamespace
+{
+    public enum EnumFromOtherNamespace
     {
-        public int[] Integers { get; init; }
+        A,
+        B
     }
 }

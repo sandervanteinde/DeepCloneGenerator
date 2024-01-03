@@ -163,7 +163,7 @@ public class CloneGeneratorClassContext : IDisposable
 
             switch (member, syntaxNode)
             {
-                case (IFieldSymbol { CanBeReferencedByName: true, Type: var returnType } field, _):
+                case (IFieldSymbol { CanBeReferencedByName: true, Type: var returnType, IsConst: false } field, _):
                     WriteAssignment(field, returnType);
                     break;
                 case (IPropertySymbol { Type: var returnType, IsAbstract: false } propertySymbol, PropertyDeclarationSyntax
@@ -565,11 +565,11 @@ public class CloneGeneratorClassContext : IDisposable
         var variableNameToAssign = NextUniqueVariableName();
         var depth = GetDepth(elementType);
 
-        var elementTypeAsName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+        var elementTypeAsName = elementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             .TrimEnd('[', ']');
         var lengths = new List<string>(arrayType.Rank);
 
-        _writer.WriteLine($"{arrayType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} {variableNameToAssign};");
+        _writer.WriteLine($"{arrayType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {variableNameToAssign};");
         _writer.WriteLine($"if(ReferenceEquals({variableName}, null))");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
