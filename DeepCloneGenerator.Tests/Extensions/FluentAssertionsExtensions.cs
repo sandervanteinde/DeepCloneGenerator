@@ -23,6 +23,11 @@ public static class FluentAssertionsExtensions
             var subject = comparands.Subject;
             var expectation = comparands.Expectation;
 
+            if (subject is null && expectation is null)
+            {
+                return EquivalencyResult.ContinueWithNext;
+            }
+
             if (comparands.RuntimeType.IsClass && comparands.RuntimeType != typeof(string))
             {
                 subject.Should()
