@@ -47,6 +47,12 @@ jobs:
         if: github.event_name != 'pull_request'
 
       - name: Publish class library NuGet to NuGet
+        run: dotnet nuget push ./artifacts/package/release/DeepCloneGenerator.Analyzers.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg -k ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        if: github.event_name != 'pull_request'
+
+      - name: Publish class library NuGet to NuGet
         run: dotnet nuget push ./artifacts/package/release/DeepCloneGenerator.${{ steps.gitversion.outputs.nuGetVersion }}.nupkg -k ${NUGET_TOKEN}
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

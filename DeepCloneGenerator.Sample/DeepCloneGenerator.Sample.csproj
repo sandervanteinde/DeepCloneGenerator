@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>DeepCloneGenerator.Analyzers.Sample</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\DeepCloneGenerator\DeepCloneGenerator.csproj" />
+        <ProjectReference Include="..\DeepCloneGenerator.Analyzers\DeepCloneGenerator.Analyzers.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+
+</Project>
