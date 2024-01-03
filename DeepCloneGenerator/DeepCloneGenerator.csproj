@@ -15,8 +15,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DeepCloneGenerator.Analyzers\DeepCloneGenerator.Analyzers\DeepCloneGenerator.Analyzers.csproj" />
         <ProjectReference Include="..\DeepCloneGenerator.Generator\DeepCloneGenerator.Generator.csproj"/>
+        <ProjectReference Include="..\DeepCloneGenerator.Analyzers\DeepCloneGenerator.Analyzers.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
