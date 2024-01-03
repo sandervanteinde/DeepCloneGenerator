@@ -1,6 +1,4 @@
 ﻿namespace DeepCloneGenerator;
 
-[AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct)]
-public class GenerateDeepCloneAttribute : Attribute
-{
-}
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+public class GenerateDeepCloneAttribute : Attribute;

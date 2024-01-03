@@ -32,13 +32,11 @@ public partial class ClassWithPropertyTests
         public int Minutes
         {
             get { return Hours * 60; }
-            set{}
         }
 
         public int Seconds
         {
             get { return Minutes * 60; }
-            set{}
         }
     }
 }

@@ -1,6 +1,4 @@
 namespace DeepCloneGenerator;
 
-[AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field)]
-public class CloneIgnoreAttribute : Attribute
-{
-}
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public class CloneIgnoreAttribute : Attribute;

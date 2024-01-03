@@ -39,6 +39,11 @@ public class PropertyIsReferenceWithoutCloneAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        if (context.Symbol.HasIgnoreAttribute())
+        {
+            return;
+        }
+
         var type = context.Symbol switch
         {
             IPropertySymbol propertySymbol => propertySymbol.Type,

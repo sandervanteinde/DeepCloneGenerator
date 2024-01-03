@@ -1,8 +1,4 @@
-﻿using System;
-using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.CodeDom.Compiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static DeepCloneGenerator.CloneGenerator;
@@ -40,6 +36,8 @@ public class CloneGeneratorClassContext : IDisposable
     {
         var simpleTypeName = _classSymbol.Name;
         var typeName = ClassSymbolName();
+        _writer.WriteLine("#nullable enable");
+        _writer.WriteLineNoTabs("#pragma warning disable CS8618");
 
         var hierarchy = EnumerateParentHierarchy(_classSymbol);
 
@@ -148,11 +146,6 @@ public class CloneGeneratorClassContext : IDisposable
                 nonCompilerGeneratedMembers = nonCompilerGeneratedMembers.Concat(accessibleBaseClassMembers);
                 baseClass = baseClass.BaseType;
             }
-        }
-
-        if (type == "record")
-        {
-            ;
         }
 
         foreach (var member in nonCompilerGeneratedMembers)
@@ -449,7 +442,19 @@ public class CloneGeneratorClassContext : IDisposable
             return WriteGenericDeepCloneLogic(variableName, implementedInterface!);
         }
 
-        return $"{variableName}{(IsTypeDeepCloneable(returnType) ? $"?.{CloneMethodName}()" : string.Empty)}";
+        if (IsTypeDeepCloneable(returnType))
+        {
+            var isNullableType = returnType.NullableAnnotation is not NullableAnnotation.NotAnnotated;
+            return isNullableType
+                ? $"{variableName}?.{CloneMethodName}()"
+                : $"{variableName}.{CloneMethodName}()";
+        }
+
+        return variableName;
+
+        return $"{variableName}{(IsTypeDeepCloneable(returnType) 
+            ? $"?.{CloneMethodName}()" 
+            : string.Empty)}";
     }
 
     private string WriteGenericDeepCloneLogic(string variableName, INamedTypeSymbol implementedInterface)
@@ -529,13 +534,25 @@ public class CloneGeneratorClassContext : IDisposable
     private string WriteCollectionClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol elementType)
     {
         var variableNameToAssign = NextUniqueVariableName();
-        _writer.WriteLine($"var {variableNameToAssign} = new {collectionType.ToDisplayString()}();");
+        _writer.WriteLine($"{collectionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} {variableNameToAssign};");
+        _writer.WriteLine($"if({variableName} is null)");
+        _writer.WriteLine('{');
+        _writer.Indent++;
+        _writer.WriteLine($"{variableNameToAssign} = null!;");
+        _writer.Indent--;
+        _writer.WriteLine('}');
+        _writer.WriteLine("else");
+        _writer.WriteLine('{');
+        _writer.Indent++;
+        _writer.WriteLine($"{variableNameToAssign} = new {collectionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat.RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier))}();");
         var iteratorVariableName = NextUniqueVariableName();
         _writer.WriteLine($"foreach(var {iteratorVariableName} in {variableName})");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
         var elementVariableName = WriteCloneLogic(iteratorVariableName, elementType);
         _writer.WriteLine($"{variableNameToAssign}.Add({elementVariableName});");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
         _writer.Indent--;
         _writer.WriteLine(value: '}');
 
@@ -548,8 +565,6 @@ public class CloneGeneratorClassContext : IDisposable
         var variableNameToAssign = NextUniqueVariableName();
         var depth = GetDepth(elementType);
 
-        var gotoName = NextUniqueVariableName();
-
         var elementTypeAsName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
             .TrimEnd('[', ']');
         var lengths = new List<string>(arrayType.Rank);
@@ -558,10 +573,12 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.WriteLine($"if(ReferenceEquals({variableName}, null))");
         _writer.WriteLine(value: '{');
         _writer.Indent++;
-        _writer.WriteLine($"{variableNameToAssign} = null;");
-        _writer.WriteLine($"goto {gotoName};");
+        _writer.WriteLine($"{variableNameToAssign} = null!;");
         _writer.Indent--;
         _writer.WriteLine(value: '}');
+        _writer.WriteLine("else");
+        _writer.WriteLine('{');
+        _writer.Indent++;
 
         for (var i = 0; i < arrayType.Rank; i++)
         {
@@ -603,7 +620,8 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.WriteLine(value: '}');
         }
 
-        _writer.WriteLine($"{gotoName}:");
+        _writer.Indent--;
+        _writer.WriteLine(value: '}');
 
         return variableNameToAssign;
 
