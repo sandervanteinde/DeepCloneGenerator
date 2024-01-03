@@ -16,6 +16,7 @@
         <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RootNamespace>DeepCloneGenerator</RootNamespace>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
