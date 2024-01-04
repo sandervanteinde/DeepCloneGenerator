@@ -411,6 +411,13 @@ public class CloneGeneratorClassContext : IDisposable
 
     private string WriteCloneLogic(string variableName, ITypeSymbol returnType)
     {
+        if (RecursionDepth >= 100)
+        {
+            _writer.WriteLine("// Maximum recursion depth reached and thus this is a by-reference invocation");
+            return variableName;
+        }
+
+        using var _ = IncrementCounter();
         if (returnType is IArrayTypeSymbol arraySymbol)
         {
             return WriteArrayClone(variableName, arraySymbol);
@@ -451,10 +458,6 @@ public class CloneGeneratorClassContext : IDisposable
         }
 
         return variableName;
-
-        return $"{variableName}{(IsTypeDeepCloneable(returnType) 
-            ? $"?.{CloneMethodName}()" 
-            : string.Empty)}";
     }
 
     private string WriteGenericDeepCloneLogic(string variableName, INamedTypeSymbol implementedInterface)
@@ -796,4 +799,24 @@ public class CloneGeneratorClassContext : IDisposable
             return true;
         }
     }
+
+    private IDisposable IncrementCounter() => new IncrementCounterDisposable(this);
+
+    private class IncrementCounterDisposable : IDisposable
+    {
+        private readonly CloneGeneratorClassContext _ctx;
+
+        public IncrementCounterDisposable(CloneGeneratorClassContext ctx)
+        {
+            _ctx = ctx;
+            _ctx.RecursionDepth++;
+        }
+
+        public void Dispose()
+        {
+            _ctx.RecursionDepth--;
+        }
+    }
+
+    private int RecursionDepth;
 }
