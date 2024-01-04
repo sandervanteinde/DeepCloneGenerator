@@ -446,7 +446,7 @@ public class CloneGeneratorClassContext : IDisposable
 
         if (IsGenericDeepCloneable(returnType, out var implementedInterface))
         {
-            return WriteGenericDeepCloneLogic(variableName, implementedInterface!);
+            return WriteGenericDeepCloneLogic(variableName, returnType, implementedInterface!);
         }
 
         if (IsTypeDeepCloneable(returnType))
@@ -460,10 +460,15 @@ public class CloneGeneratorClassContext : IDisposable
         return variableName;
     }
 
-    private string WriteGenericDeepCloneLogic(string variableName, INamedTypeSymbol implementedInterface)
+    private string WriteGenericDeepCloneLogic(string variableName, ITypeSymbol returnType, INamedTypeSymbol implementedInterface)
     {
         _writer.WriteDebugCommentLine($"{implementedInterface.ToDisplayString()} detected");
-        var typeArguments = implementedInterface.TypeArguments;
+        IEnumerable<ITypeSymbol> typeArguments = implementedInterface.TypeArguments;
+
+        if (implementedInterface.Name == GenericInterfaceName)
+        {
+            typeArguments = typeArguments.Skip(1);
+        }
         var typeArgumentsVariables = new List<string>();
 
         foreach (var typeArgument in typeArguments)
@@ -480,7 +485,11 @@ public class CloneGeneratorClassContext : IDisposable
             typeArgumentsVariables.Add(mapper);
         }
 
-        return $"{variableName}.DeepClone({string.Join(", ", typeArgumentsVariables)})";
+        var nullCoalescentOperator = returnType.NullableAnnotation is not NullableAnnotation.NotAnnotated
+            ? "?"
+            : string.Empty;
+
+        return $"{variableName}{nullCoalescentOperator}.DeepClone({string.Join(", ", typeArgumentsVariables)})";
     }
 
     private bool IsGenericDeepCloneable(ITypeSymbol returnType, out INamedTypeSymbol? typeSymbol)
