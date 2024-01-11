@@ -17,6 +17,8 @@ public class CloneGeneratorClassContext : IDisposable
 
     private readonly IndentedTextWriter _writer;
 
+    private int _recursionDepth;
+
     public CloneGeneratorClassContext(CloneGeneratorContext context, INamedTypeSymbol classSymbol)
     {
         _context = context;
@@ -79,16 +81,16 @@ public class CloneGeneratorClassContext : IDisposable
 
         if (!_classSymbol.IsAbstract)
         {
-            _writer.Write($" : {Namespace}.{InterfaceName}<{typeName}>");
-
             if (_classSymbol.IsGenericType)
             {
-                _writer.Write(", ");
-                _writer.Write($"{Namespace}.{GenericInterfaceName}<{typeName}, {string.Join(", ", _classSymbol.TypeArguments.Select(c => c.Name))}>");
+                _writer.WriteLine($": {Namespace}.{GenericInterfaceName}<{typeName}, {string.Join(", ", _classSymbol.TypeArguments.Select(c => c.Name))}>");
+            }
+            else
+            {
+                _writer.WriteLine($" : {Namespace}.{InterfaceName}<{typeName}>");
             }
         }
 
-        _writer.WriteLine();
         _writer.WriteLine(value: '{');
         _writer.Indent++;
 
@@ -238,28 +240,6 @@ public class CloneGeneratorClassContext : IDisposable
             _writer.WriteLine(");");
             _writer.Indent--;
             _writer.WriteLine(value: '}');
-
-            if (_classSymbol.IsGenericType)
-            {
-                _writer.WriteLine($"{typeName} {Namespace}.{InterfaceName}<{typeName}>.{CloneMethodName}()");
-                _writer.WriteLine(value: '{');
-                _writer.Indent++;
-                _writer.Write($"return {CloneMethodName}(");
-                ForEachTypeArgument(
-                    (_, index) =>
-                    {
-                        if (index > 0)
-                        {
-                            _writer.Write(", ");
-                        }
-
-                        _writer.Write("static self => self");
-                    }
-                );
-                _writer.WriteLine(");");
-                _writer.Indent--;
-                _writer.WriteLine("}");
-            }
         }
 
         _writer.Indent--;
@@ -411,13 +391,14 @@ public class CloneGeneratorClassContext : IDisposable
 
     private string WriteCloneLogic(string variableName, ITypeSymbol returnType)
     {
-        if (RecursionDepth >= 100)
+        if (_recursionDepth >= 100)
         {
             _writer.WriteLine("// Maximum recursion depth reached and thus this is a by-reference invocation");
             return variableName;
         }
 
         using var _ = IncrementCounter();
+
         if (returnType is IArrayTypeSymbol arraySymbol)
         {
             return WriteArrayClone(variableName, arraySymbol);
@@ -467,8 +448,9 @@ public class CloneGeneratorClassContext : IDisposable
 
         if (implementedInterface.Name == GenericInterfaceName)
         {
-            typeArguments = typeArguments.Skip(1);
+            typeArguments = typeArguments.Skip(count: 1);
         }
+
         var typeArgumentsVariables = new List<string>();
 
         foreach (var typeArgument in typeArguments)
@@ -523,7 +505,8 @@ public class CloneGeneratorClassContext : IDisposable
         var typeName = type.ToDisplayString();
         return _context.ClassesInAssemblyGeneratingClone.Contains(typeName)
             || type.AllInterfaces.Any(c => c.Name == InterfaceName)
-            || (!type.Equals(type.OriginalDefinition, SymbolEqualityComparer.Default) && type.OriginalDefinition is INamedTypeSymbol { TypeArguments.Length: > 0 } && IsTypeDeepCloneable(type.OriginalDefinition));
+            || (!type.Equals(type.OriginalDefinition, SymbolEqualityComparer.Default)
+                && type.OriginalDefinition is INamedTypeSymbol { TypeArguments.Length: > 0 } && IsTypeDeepCloneable(type.OriginalDefinition));
     }
 
     private string WriteDictionaryClone(string variableName, INamedTypeSymbol collectionType, ITypeSymbol keyType, ITypeSymbol valueType)
@@ -548,15 +531,17 @@ public class CloneGeneratorClassContext : IDisposable
         var variableNameToAssign = NextUniqueVariableName();
         _writer.WriteLine($"{collectionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} {variableNameToAssign};");
         _writer.WriteLine($"if({variableName} is null)");
-        _writer.WriteLine('{');
+        _writer.WriteLine(value: '{');
         _writer.Indent++;
         _writer.WriteLine($"{variableNameToAssign} = null!;");
         _writer.Indent--;
-        _writer.WriteLine('}');
+        _writer.WriteLine(value: '}');
         _writer.WriteLine("else");
-        _writer.WriteLine('{');
+        _writer.WriteLine(value: '{');
         _writer.Indent++;
-        _writer.WriteLine($"{variableNameToAssign} = new {collectionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat.RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier))}();");
+        _writer.WriteLine(
+            $"{variableNameToAssign} = new {collectionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat.RemoveMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier))}();"
+        );
         var iteratorVariableName = NextUniqueVariableName();
         _writer.WriteLine($"foreach(var {iteratorVariableName} in {variableName})");
         _writer.WriteLine(value: '{');
@@ -589,7 +574,7 @@ public class CloneGeneratorClassContext : IDisposable
         _writer.Indent--;
         _writer.WriteLine(value: '}');
         _writer.WriteLine("else");
-        _writer.WriteLine('{');
+        _writer.WriteLine(value: '{');
         _writer.Indent++;
 
         for (var i = 0; i < arrayType.Rank; i++)
@@ -809,7 +794,10 @@ public class CloneGeneratorClassContext : IDisposable
         }
     }
 
-    private IDisposable IncrementCounter() => new IncrementCounterDisposable(this);
+    private IDisposable IncrementCounter()
+    {
+        return new IncrementCounterDisposable(this);
+    }
 
     private class IncrementCounterDisposable : IDisposable
     {
@@ -818,14 +806,12 @@ public class CloneGeneratorClassContext : IDisposable
         public IncrementCounterDisposable(CloneGeneratorClassContext ctx)
         {
             _ctx = ctx;
-            _ctx.RecursionDepth++;
+            _ctx._recursionDepth++;
         }
 
         public void Dispose()
         {
-            _ctx.RecursionDepth--;
+            _ctx._recursionDepth--;
         }
     }
-
-    private int RecursionDepth;
 }
