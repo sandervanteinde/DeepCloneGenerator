@@ -3,9 +3,9 @@
 Deep clone generator is a library that utilizes source generator to generate a `DeepClone()` method which clones classes
 by its values.
 
-![NuGet Version](https://img.shields.io/nuget/v/DeepCloneGenerator)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sandervanteinde/DeepCloneGenerator/dotnet.yml)
-![GitHub issues](https://img.shields.io/github/issues/sandervanteinde/DeepCloneGenerator)
+[![NuGet Version](https://img.shields.io/nuget/v/DeepCloneGenerator)](https://www.nuget.org/packages/DeepCloneGenerator)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sandervanteinde/DeepCloneGenerator/dotnet.yml)](https://github.com/sandervanteinde/DeepCloneGenerator/actions/workflows/dotnet.yml)
+[![GitHub issues](https://img.shields.io/github/issues/sandervanteinde/DeepCloneGenerator)](https://github.com/sandervanteinde/DeepCloneGenerator/issues)
 
 ## Usage
 
